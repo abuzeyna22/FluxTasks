@@ -21,10 +21,13 @@
         .container { max-width: 1200px; margin: auto; background: var(--container-bg); padding: 30px; border-radius: 15px; box-shadow: var(--shadow); }
         .header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px; }
         h2 { color: var(--header-color); margin: 0; }
-        .sync-status { font-size: 12px; color: var(--success-color); text-align: left; margin-bottom: 20px; }
+        .sync-status { font-size: 12px; color: var(--success-color); text-align: left; margin-bottom: 15px; }
         .mode-btn { background: transparent; color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Cairo'; font-weight: 600; }
         
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; background: var(--bg-color); padding: 20px; border-radius: 12px; align-items: flex-end; }
+        .search-bar { margin-bottom: 20px; }
+        .search-bar input { width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; background: var(--bg-color); color: var(--text-color); font-family: 'Cairo'; box-sizing: border-box; }
+
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; background: var(--bg-color); padding: 20px; border-radius: 12px; align-items: flex-end; }
         .form-group { display: flex; flex-direction: column; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 14px; }
         input, select { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; background: var(--container-bg); color: var(--text-color); font-family: 'Cairo'; }
@@ -35,10 +38,14 @@
         @media (max-width: 900px) { .tasks-grid { grid-template-columns: 1fr 1fr; } .form-grid { grid-template-columns: 1fr; } }
         @media (max-width: 600px) { .tasks-grid { grid-template-columns: 1fr; } }
         
-        .column { background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); min-height: 200px; }
-        .column h3 { margin-top: 0; font-size: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;}
+        .column { background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 65vh; /* ارتفاع ثابت للأعمدة */ }
+        .column h3 { margin-top: 0; font-size: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .count-badge { background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 10px; font-size: 12px; }
         
+        .column-content { overflow-y: auto; flex-grow: 1; padding-left: 5px; /* مساحة لشريط التمرير */ }
+        .column-content::-webkit-scrollbar { width: 6px; }
+        .column-content::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+
         .task-card { background: var(--container-bg); padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: var(--shadow); border-top: 4px solid var(--primary-color); position: relative; }
         .task-card.mustafa { border-top-color: var(--danger-color); }
         .task-card.iman { border-top-color: var(--warning-color); }
@@ -90,6 +97,10 @@
     </div>
     <div class="sync-status" id="syncStatus">جاري المزامنة...</div>
 
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍 ابحث باسم المهمة، العميل، أو المسؤول...">
+    </div>
+
     <form id="taskForm" class="form-grid">
         <div class="form-group">
             <label>اسم المهمة</label>
@@ -124,19 +135,19 @@
     <div class="tasks-grid">
         <div class="column">
             <h3>قيد التنفيذ <span class="count-badge" id="count-progress">0</span></h3>
-            <div id="progressColumn"></div>
+            <div class="column-content" id="progressColumn"></div>
         </div>
         <div class="column">
             <h3 style="color:var(--purple-color)">طلبات تعديل <span class="count-badge" id="count-revision">0</span></h3>
-            <div id="revisionColumn"></div>
+            <div class="column-content" id="revisionColumn"></div>
         </div>
         <div class="column">
             <h3 style="color:var(--danger-color)">مهام متأخرة <span class="count-badge" id="count-late">0</span></h3>
-            <div id="lateColumn"></div>
+            <div class="column-content" id="lateColumn"></div>
         </div>
         <div class="column">
             <h3 style="color:var(--success-color)">مكتملة <span class="count-badge" id="count-done">0</span></h3>
-            <div id="doneColumn"></div>
+            <div class="column-content" id="doneColumn"></div>
         </div>
     </div>
 </div>
@@ -206,17 +217,24 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyiHPv8Pm0uf1507xNWSjAe1mgzC6LDFoYkFiO4fuG2a8djRREstZUQ4DGpOptENUg/exec"; 
-    // تم إزالة كلمة المرور من هنا نهائياً!
+    const API_URL = "https://script.google.com/macros/s/AKfycbwRC5RigrPoFhluuZImjp3I27AlKb7KdL0jAWr98WDu2YzusR5rH3Oqvau6UUQtEo0/exec"; 
     let tasks = [];
     let editingId = null;
     let deliveringId = null; 
     let confirmCallback = null; 
     let pendingAction = null; 
-    let activePin = null; // تخزين كلمة المرور مؤقتاً في الذاكرة فقط بعد التحقق منها
+    let activePin = null; 
+    let searchQuery = ''; // متغير البحث
 
     const form = document.getElementById('taskForm');
-    
+    const searchInput = document.getElementById('searchInput');
+
+    // استماع لكتابة البحث
+    searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase();
+        renderTasks();
+    });
+
     function toggleDarkMode() {
         document.body.classList.toggle('dark-mode');
         const isDark = document.body.classList.contains('dark-mode');
@@ -265,7 +283,18 @@
 
         let counts = { progress: 0, revision: 0, late: 0, done: 0 };
 
-        tasks.forEach((task) => {
+        // فلترة المهام بناءً على البحث
+        const filteredTasks = tasks.filter(task => {
+            if (!searchQuery) return true; // إذا لم يكن هناك بحث، أظهر كل شيء
+            return (
+                task.taskName.toLowerCase().includes(searchQuery) ||
+                (task.client && task.client.toLowerCase().includes(searchQuery)) ||
+                task.assignee.toLowerCase().includes(searchQuery) ||
+                (task.createdBy && task.createdBy.toLowerCase().includes(searchQuery))
+            );
+        });
+
+        filteredTasks.forEach((task) => {
             const isLate = checkIfLate(task.deadline, task.status);
             let displayStatus = task.status;
             if(isLate && task.status !== 'مكتملة' && task.status !== 'تعديل مطلوب') {
@@ -324,6 +353,7 @@
             }
         });
 
+        // تحديث العداد ليعكس العدد الإجمالي (وليس المفلتر فقط)
         document.getElementById('count-progress').innerText = counts.progress;
         document.getElementById('count-revision').innerText = counts.revision;
         document.getElementById('count-late').innerText = counts.late;
@@ -354,7 +384,6 @@
         }
     }
 
-    // --- نظام المصادقة (PIN) عبر الخادم ---
     function requestPin(actionCallback) {
         pendingAction = actionCallback;
         document.getElementById('pinInput').value = '';
@@ -362,8 +391,7 @@
         document.getElementById('pinModal').style.display = 'flex';
     }
 
-    // التحقق من كلمة المرور بإرسالها للخادم (Google Apps Script)
-       async function verifyPin() {
+    async function verifyPin() {
         const enteredPin = document.getElementById('pinInput').value;
         document.getElementById('pinError').style.display = 'none';
         document.getElementById('pinError').innerText = "جاري التحقق...";
@@ -374,10 +402,10 @@
             const response = await fetch(`${API_URL}?action=verifyPin&pin=${enteredPin}&t=${Date.now()}`);
             const result = await response.json();
             if (result.verified) {
-                activePin = enteredPin; // حفظ كلمة المرور
-                const actionToRun = pendingAction; // 1. حفظ الإجراء (حذف/تعديل) في متغير مؤقت
-                closePinModal(); // 2. إغلاق النافذة (التي تنسى الإجراء)
-                if (actionToRun) actionToRun(); // 3. تنفيذ الإجراء المحفوظ
+                activePin = enteredPin;
+                const actionToRun = pendingAction; 
+                closePinModal(); 
+                if (actionToRun) actionToRun(); 
             } else {
                 document.getElementById('pinError').innerText = "رمز غير صحيح! حاول مرة أخرى.";
                 document.getElementById('pinError').style.color = "#e53e3e";
@@ -433,9 +461,9 @@
     function closeEditModal() {
         document.getElementById('editModal').style.display = 'none';
         editingId = null;
-        activePin = null; // مسح كلمة المرور من الذاكرة
+        activePin = null; 
     }
-       function saveEdit() {
+    function saveEdit() {
         if(editingId) {
             const task = tasks.find(t => t.id === editingId);
             if(task) {
@@ -444,8 +472,8 @@
                     task.client = document.getElementById('editClient').value;
                     task.deadline = document.getElementById('editDeadline').value;
                     if(task.status === 'متأخرة') task.status = 'قيد التنفيذ';
-                    task.action = 'updateData'; // علم التعديل المحمي
-                    task.pin = activePin; // إرفاق كلمة المرور
+                    task.action = 'updateData'; 
+                    task.pin = activePin; 
                     sendToSheet(task);
                     closeEditModal();
                 }, "نعم، احفظ", "btn-confirm-primary");
@@ -455,8 +483,8 @@
 
     function deleteTask(id) {
         showConfirm("⚠️ تحذير: سيتم حذف هذه المهمة نهائياً. هل أنت متأكد؟", () => {
-            sendToSheet({ action: 'delete', id: id, pin: activePin }); // إرفاق كلمة المرور مع طلب الحذف
-            activePin = null; // مسح كلمة المرور من الذاكرة
+            sendToSheet({ action: 'delete', id: id, pin: activePin }); 
+            activePin = null; 
         }, "نعم، احذف", "btn-confirm-danger");
     }
 
