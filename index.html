@@ -363,7 +363,7 @@
     }
 
     // التحقق من كلمة المرور بإرسالها للخادم (Google Apps Script)
-    async function verifyPin() {
+       async function verifyPin() {
         const enteredPin = document.getElementById('pinInput').value;
         document.getElementById('pinError').style.display = 'none';
         document.getElementById('pinError').innerText = "جاري التحقق...";
@@ -374,9 +374,10 @@
             const response = await fetch(`${API_URL}?action=verifyPin&pin=${enteredPin}&t=${Date.now()}`);
             const result = await response.json();
             if (result.verified) {
-                activePin = enteredPin; // حفظ مؤقت في الذاكرة لإرساله مع التعديل
-                closePinModal();
-                if (pendingAction) pendingAction();
+                activePin = enteredPin; // حفظ كلمة المرور
+                const actionToRun = pendingAction; // 1. حفظ الإجراء (حذف/تعديل) في متغير مؤقت
+                closePinModal(); // 2. إغلاق النافذة (التي تنسى الإجراء)
+                if (actionToRun) actionToRun(); // 3. تنفيذ الإجراء المحفوظ
             } else {
                 document.getElementById('pinError').innerText = "رمز غير صحيح! حاول مرة أخرى.";
                 document.getElementById('pinError').style.color = "#e53e3e";
