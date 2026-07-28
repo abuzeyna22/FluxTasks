@@ -141,7 +141,6 @@
     </div>
 </div>
 
-<!-- نافذة تسليم العمل (بدون PIN) -->
 <div class="modal-overlay" id="deliverModal">
     <div class="modal-content">
         <h3>🚀 تسليم العمل / ملاحظات</h3>
@@ -160,7 +159,6 @@
     </div>
 </div>
 
-<!-- نافذة PIN -->
 <div class="modal-overlay" id="pinModal">
     <div class="modal-content">
         <h3>🔐 صلاحية المدير</h3>
@@ -174,7 +172,6 @@
     </div>
 </div>
 
-<!-- نافذة تعديل البيانات (ب PIN) -->
 <div class="modal-overlay" id="editModal">
     <div class="modal-content">
         <h3>⚙️ تعديل بيانات المهمة</h3>
@@ -197,7 +194,6 @@
     </div>
 </div>
 
-<!-- نافذة التأكيد -->
 <div class="modal-overlay" id="confirmModal">
     <div class="modal-content">
         <h3 id="confirmTitle">تأكيد العملية</h3>
@@ -210,13 +206,14 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwRlBUrPBoYbq49_1bUmdTKNUIEbK1ix7fTiv_r4QBb7ism8qmB1NZ2rbz-uDhk29w/exec"; 
-    const ADMIN_PIN = "2468"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbz5KsI41clFFFwIgwZ4jH1G7jVzrDJpiJS7M9RPq5gBNghzx2DciOakqo3kOSQi6Ak/exec"; 
+    // تم إزالة كلمة المرور من هنا نهائياً!
     let tasks = [];
     let editingId = null;
-    let deliveringId = null; // لتخزين معرف المهمة التي يتم تسليمها
+    let deliveringId = null; 
     let confirmCallback = null; 
     let pendingAction = null; 
+    let activePin = null; // تخزين كلمة المرور مؤقتاً في الذاكرة فقط بعد التحقق منها
 
     const form = document.getElementById('taskForm');
     
@@ -281,14 +278,9 @@
             
             const formattedDate = task.deadline ? new Date(task.deadline).toLocaleDateString('ar-EG') : 'بدون موعد';
             
-            // أزرار التحكم
-            // 1. زر تسليم/ملاحظات (بدون PIN)
             let buttons = `<button class="action-btn btn-deliver" onclick="openDeliverModal('${task.id}')">📝 تسليم/ملاحظات</button>`;
-            
-            // 2. زر تعديل البيانات (بـ PIN)
             buttons += `<button class="action-btn btn-edit" onclick="requestPin(() => openEditModal('${task.id}'))">⚙️ تعديل</button>`;
             
-            // 3. أزرار تغيير الحالة
             if (displayStatus === 'مكتملة') {
                 buttons += `<button class="action-btn btn-revision" onclick="changeStatus('${task.id}', 'تعديل مطلوب')">إعادة للتعديل 🔄</button>`;
             } else {
@@ -300,8 +292,6 @@
                 }
                 buttons += `<button class="action-btn btn-complete" onclick="changeStatus('${task.id}', 'مكتملة')">إنهاء ✅</button>`;
             }
-            
-            // 4. زر الحذف (بـ PIN)
             buttons += `<button class="action-btn del-btn" onclick="requestPin(() => deleteTask('${task.id}'))">🗑️</button>`;
 
             card.innerHTML = `
@@ -364,7 +354,7 @@
         }
     }
 
-    // --- نظام المصادقة (PIN) ---
+    // --- نظام المصادقة (PIN) عبر الخادم ---
     function requestPin(actionCallback) {
         pendingAction = actionCallback;
         document.getElementById('pinInput').value = '';
@@ -372,12 +362,29 @@
         document.getElementById('pinModal').style.display = 'flex';
     }
 
-    function verifyPin() {
+    // التحقق من كلمة المرور بإرسالها للخادم (Google Apps Script)
+    async function verifyPin() {
         const enteredPin = document.getElementById('pinInput').value;
-        if (enteredPin === ADMIN_PIN) {
-            closePinModal();
-            if (pendingAction) pendingAction();
-        } else {
+        document.getElementById('pinError').style.display = 'none';
+        document.getElementById('pinError').innerText = "جاري التحقق...";
+        document.getElementById('pinError').style.color = "#3182ce";
+        document.getElementById('pinError').style.display = 'block';
+
+        try {
+            const response = await fetch(`${API_URL}?action=verifyPin&pin=${enteredPin}&t=${Date.now()}`);
+            const result = await response.json();
+            if (result.verified) {
+                activePin = enteredPin; // حفظ مؤقت في الذاكرة لإرساله مع التعديل
+                closePinModal();
+                if (pendingAction) pendingAction();
+            } else {
+                document.getElementById('pinError').innerText = "رمز غير صحيح! حاول مرة أخرى.";
+                document.getElementById('pinError').style.color = "#e53e3e";
+                document.getElementById('pinError').style.display = 'block';
+            }
+        } catch (err) {
+            document.getElementById('pinError').innerText = "خطأ في الاتصال بالخادم.";
+            document.getElementById('pinError').style.color = "#e53e3e";
             document.getElementById('pinError').style.display = 'block';
         }
     }
@@ -387,7 +394,6 @@
         pendingAction = null;
     }
 
-    // --- نافذة تسليم العمل (بدون PIN) ---
     function openDeliverModal(id) {
         deliveringId = id;
         const task = tasks.find(t => t.id === id);
@@ -413,7 +419,6 @@
         }
     }
 
-    // --- نافذة تعديل البيانات (بـ PIN) ---
     function openEditModal(id) {
         editingId = id;
         const task = tasks.find(t => t.id === id);
@@ -427,6 +432,7 @@
     function closeEditModal() {
         document.getElementById('editModal').style.display = 'none';
         editingId = null;
+        activePin = null; // مسح كلمة المرور من الذاكرة
     }
     function saveEdit() {
         if(editingId) {
@@ -437,6 +443,7 @@
                     task.client = document.getElementById('editClient').value;
                     task.deadline = document.getElementById('editDeadline').value;
                     if(task.status === 'متأخرة') task.status = 'قيد التنفيذ';
+                    task.pin = activePin; // إرفاق كلمة المرور مع طلب التعديل
                     sendToSheet(task);
                     closeEditModal();
                 }, "نعم، احفظ", "btn-confirm-primary");
@@ -444,14 +451,13 @@
         }
     }
 
-    // --- دالة الحذف (بـ PIN) ---
     function deleteTask(id) {
         showConfirm("⚠️ تحذير: سيتم حذف هذه المهمة نهائياً. هل أنت متأكد؟", () => {
-            sendToSheet({ action: 'delete', id: id });
+            sendToSheet({ action: 'delete', id: id, pin: activePin }); // إرفاق كلمة المرور مع طلب الحذف
+            activePin = null; // مسح كلمة المرور من الذاكرة
         }, "نعم، احذف", "btn-confirm-danger");
     }
 
-    // --- نظام التأكيد ---
     function showConfirm(message, callback, btnText = "تأكيد", btnClass = "btn-confirm-danger") {
         document.getElementById('confirmMessage').innerText = message;
         const confirmBtn = document.getElementById('confirmBtn');
@@ -469,7 +475,6 @@
         closeConfirm();
     }
 
-    // بدء التشغيل
     fetchTasks();
     setInterval(fetchTasks, 15000); 
 </script>
