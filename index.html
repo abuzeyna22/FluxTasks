@@ -24,7 +24,7 @@
         .sync-status { font-size: 12px; color: var(--success-color); text-align: left; margin-bottom: 20px; }
         .mode-btn { background: transparent; color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Cairo'; font-weight: 600; }
         
-        .form-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 0.5fr; gap: 15px; margin-bottom: 30px; background: var(--bg-color); padding: 20px; border-radius: 12px; align-items: flex-end; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; background: var(--bg-color); padding: 20px; border-radius: 12px; align-items: flex-end; }
         .form-group { display: flex; flex-direction: column; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 14px; }
         input, select { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; background: var(--container-bg); color: var(--text-color); font-family: 'Cairo'; }
@@ -50,10 +50,14 @@
         .assignee-tag { padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px; }
         .tag-mustafa { background: rgba(229, 62, 62, 0.2); color: #e53e3e; }
         .tag-iman { background: rgba(214, 158, 46, 0.2); color: #d69e2e; }
+        .creator-tag { background: rgba(49, 130, 206, 0.2); color: #3182ce; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px; }
+        .task-notes { background: rgba(128, 90, 213, 0.1); color: var(--purple-color); padding: 8px; border-radius: 6px; margin-top: 5px; font-size: 12px; text-align: right; }
         
         .task-actions { margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
         .action-btn { padding: 4px 8px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Cairo'; background: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
         .action-btn:hover { background: var(--border-color); }
+        .btn-deliver { color: var(--success-color); border-color: var(--success-color); }
+        .btn-deliver:hover { background: var(--success-color); color: white; }
         .btn-revision { color: var(--purple-color); border-color: var(--purple-color); }
         .btn-revision:hover { background: var(--purple-color); color: white; }
         .btn-complete { color: var(--success-color); border-color: var(--success-color); }
@@ -99,6 +103,14 @@
             </select>
         </div>
         <div class="form-group">
+            <label>أضافها</label>
+            <select id="createdBy" required>
+                <option value="محمد">محمد</option>
+                <option value="مصطفى">مصطفى</option>
+                <option value="إيمان">إيمان</option>
+            </select>
+        </div>
+        <div class="form-group">
             <label>العميل / القسم</label>
             <input type="text" id="client" placeholder="اسم العميل">
         </div>
@@ -129,7 +141,26 @@
     </div>
 </div>
 
-<!-- نافذة PIN码 -->
+<!-- نافذة تسليم العمل (بدون PIN) -->
+<div class="modal-overlay" id="deliverModal">
+    <div class="modal-content">
+        <h3>🚀 تسليم العمل / ملاحظات</h3>
+        <div class="form-group" style="text-align: right;">
+            <label>رابط المواد (Drive)</label>
+            <input type="url" id="deliverLink" placeholder="https://...">
+        </div>
+        <div class="form-group" style="text-align: right;">
+            <label>ملاحظات / تعليقات</label>
+            <textarea id="deliverNotes" rows="3" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Cairo';" placeholder="اكتب ملاحظاتك أو تعديلات العميل هنا..."></textarea>
+        </div>
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button class="modal-btn btn-cancel" onclick="closeDeliverModal()">إلغاء</button>
+            <button class="modal-btn btn-confirm-primary" onclick="saveDelivery()">حفظ التسليم</button>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة PIN -->
 <div class="modal-overlay" id="pinModal">
     <div class="modal-content">
         <h3>🔐 صلاحية المدير</h3>
@@ -143,9 +174,10 @@
     </div>
 </div>
 
+<!-- نافذة تعديل البيانات (ب PIN) -->
 <div class="modal-overlay" id="editModal">
     <div class="modal-content">
-        <h3>تعديل بيانات المهمة</h3>
+        <h3>⚙️ تعديل بيانات المهمة</h3>
         <div class="form-group" style="text-align: right;">
             <label>اسم المهمة</label>
             <input type="text" id="editTaskName">
@@ -165,6 +197,7 @@
     </div>
 </div>
 
+<!-- نافذة التأكيد -->
 <div class="modal-overlay" id="confirmModal">
     <div class="modal-content">
         <h3 id="confirmTitle">تأكيد العملية</h3>
@@ -177,12 +210,13 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyauIcRqVP0k_VgHA8pIJfNOKreZV3bxK4x3Ads7VxKmH0_cwia59lAKHKytp0Sfw/exec"; 
-    const ADMIN_PIN = "1234"; // 👉 يمكنك تغيير الرمز السري هنا
+    const API_URL = "https://script.google.com/macros/s/AKfycbwRC5RigrPoFhluuZImjp3I27AlKb7KdL0jAWr98WDu2YzusR5rH3Oqvau6UUQtEo0/exec"; 
+    const ADMIN_PIN = "1234"; 
     let tasks = [];
     let editingId = null;
+    let deliveringId = null; // لتخزين معرف المهمة التي يتم تسليمها
     let confirmCallback = null; 
-    let pendingAction = null; // لحفظ الإجراء الذي يحتاج صلاحية
+    let pendingAction = null; 
 
     const form = document.getElementById('taskForm');
     
@@ -205,7 +239,7 @@
         document.getElementById('syncStatus').innerText = "جاري تحديث البيانات...";
         document.getElementById('syncStatus').style.color = "#3182ce";
         try {
-            const response = await fetch(API_URL);
+            const response = await fetch(`${API_URL}?t=${Date.now()}`);
             tasks = await response.json();
             renderTasks();
             document.getElementById('syncStatus').innerText = "آخر مزامنة: " + new Date().toLocaleTimeString('ar-EG');
@@ -247,9 +281,14 @@
             
             const formattedDate = task.deadline ? new Date(task.deadline).toLocaleDateString('ar-EG') : 'بدون موعد';
             
-            // أزرر التعديل والحذف تستدعي دالة التحقق (requestPin)
-            let buttons = `<button class="action-btn btn-edit" onclick="requestPin(() => openEditModal('${task.id}'))">✏️ تعديل</button>`;
+            // أزرار التحكم
+            // 1. زر تسليم/ملاحظات (بدون PIN)
+            let buttons = `<button class="action-btn btn-deliver" onclick="openDeliverModal('${task.id}')">📝 تسليم/ملاحظات</button>`;
             
+            // 2. زر تعديل البيانات (بـ PIN)
+            buttons += `<button class="action-btn btn-edit" onclick="requestPin(() => openEditModal('${task.id}'))">⚙️ تعديل</button>`;
+            
+            // 3. أزرار تغيير الحالة
             if (displayStatus === 'مكتملة') {
                 buttons += `<button class="action-btn btn-revision" onclick="changeStatus('${task.id}', 'تعديل مطلوب')">إعادة للتعديل 🔄</button>`;
             } else {
@@ -261,17 +300,22 @@
                 }
                 buttons += `<button class="action-btn btn-complete" onclick="changeStatus('${task.id}', 'مكتملة')">إنهاء ✅</button>`;
             }
+            
+            // 4. زر الحذف (بـ PIN)
             buttons += `<button class="action-btn del-btn" onclick="requestPin(() => deleteTask('${task.id}'))">🗑️</button>`;
 
             card.innerHTML = `
                 <div class="task-title">${task.taskName}</div>
                 <div class="task-meta">
-                    <span class="assignee-tag ${assigneeClass === 'mustafa' ? 'tag-mustafa' : 'tag-iman'}">${task.assignee}</span>
-                    <span>👤 ${task.client || 'عميل غير محدد'}</span>
+                    <span class="assignee-tag ${assigneeClass === 'mustafa' ? 'tag-mustafa' : 'tag-iman'}">المسؤول: ${task.assignee}</span>
+                    <span class="creator-tag">أضافها: ${task.createdBy || '-'}</span>
                 </div>
                 <div class="task-meta">
+                    <span>👤 ${task.client || 'عميل غير محدد'}</span>
                     <span>📅 التسليم: ${formattedDate}</span>
                 </div>
+                ${task.link ? `<div class="task-meta"><a href="${task.link}" target="_blank" style="color:var(--primary-color); text-decoration:none; font-weight:bold;">🔗 فتح رابط المواد</a></div>` : ''}
+                ${task.notes ? `<div class="task-notes">📝 ${task.notes}</div>` : ''}
                 <div class="task-actions">${buttons}</div>
             `;
 
@@ -301,8 +345,11 @@
         const newTask = {
             taskName: document.getElementById('taskName').value,
             assignee: document.getElementById('assignee').value,
+            createdBy: document.getElementById('createdBy').value,
             client: document.getElementById('client').value,
             deadline: document.getElementById('deadline').value,
+            link: "", 
+            notes: "", 
             status: 'قيد التنفيذ'
         };
         sendToSheet(newTask);
@@ -329,7 +376,7 @@
         const enteredPin = document.getElementById('pinInput').value;
         if (enteredPin === ADMIN_PIN) {
             closePinModal();
-            if (pendingAction) pendingAction(); // تنفيذ الإجراء (فتح نافذة التعديل أو الحذف)
+            if (pendingAction) pendingAction();
         } else {
             document.getElementById('pinError').style.display = 'block';
         }
@@ -340,7 +387,33 @@
         pendingAction = null;
     }
 
-    // --- دوال التعديل ---
+    // --- نافذة تسليم العمل (بدون PIN) ---
+    function openDeliverModal(id) {
+        deliveringId = id;
+        const task = tasks.find(t => t.id === id);
+        if(task) {
+            document.getElementById('deliverLink').value = task.link || '';
+            document.getElementById('deliverNotes').value = task.notes || '';
+            document.getElementById('deliverModal').style.display = 'flex';
+        }
+    }
+    function closeDeliverModal() {
+        document.getElementById('deliverModal').style.display = 'none';
+        deliveringId = null;
+    }
+    function saveDelivery() {
+        if(deliveringId) {
+            const task = tasks.find(t => t.id === deliveringId);
+            if(task) {
+                task.link = document.getElementById('deliverLink').value;
+                task.notes = document.getElementById('deliverNotes').value;
+                sendToSheet(task);
+                closeDeliverModal();
+            }
+        }
+    }
+
+    // --- نافذة تعديل البيانات (بـ PIN) ---
     function openEditModal(id) {
         editingId = id;
         const task = tasks.find(t => t.id === id);
@@ -371,7 +444,7 @@
         }
     }
 
-    // --- دالة الحذف ---
+    // --- دالة الحذف (بـ PIN) ---
     function deleteTask(id) {
         showConfirm("⚠️ تحذير: سيتم حذف هذه المهمة نهائياً. هل أنت متأكد؟", () => {
             sendToSheet({ action: 'delete', id: id });
