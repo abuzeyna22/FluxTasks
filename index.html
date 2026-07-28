@@ -206,7 +206,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbz5KsI41clFFFwIgwZ4jH1G7jVzrDJpiJS7M9RPq5gBNghzx2DciOakqo3kOSQi6Ak/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbyiHPv8Pm0uf1507xNWSjAe1mgzC6LDFoYkFiO4fuG2a8djRREstZUQ4DGpOptENUg/exec"; 
     // تم إزالة كلمة المرور من هنا نهائياً!
     let tasks = [];
     let editingId = null;
@@ -434,7 +434,7 @@
         editingId = null;
         activePin = null; // مسح كلمة المرور من الذاكرة
     }
-    function saveEdit() {
+       function saveEdit() {
         if(editingId) {
             const task = tasks.find(t => t.id === editingId);
             if(task) {
@@ -443,7 +443,8 @@
                     task.client = document.getElementById('editClient').value;
                     task.deadline = document.getElementById('editDeadline').value;
                     if(task.status === 'متأخرة') task.status = 'قيد التنفيذ';
-                    task.pin = activePin; // إرفاق كلمة المرور مع طلب التعديل
+                    task.action = 'updateData'; // علم التعديل المحمي
+                    task.pin = activePin; // إرفاق كلمة المرور
                     sendToSheet(task);
                     closeEditModal();
                 }, "نعم، احفظ", "btn-confirm-primary");
