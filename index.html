@@ -38,7 +38,7 @@
         .column-content.collapsed { display: none; }
         .empty-state { font-size: 13px; color: var(--text-color); opacity: 0.5; text-align: center; padding: 20px 0; }
 
-        .task-card { background: var(--container-bg); padding: 12px; border-radius: 8px; margin-bottom: 10px; box-shadow: var(--shadow); border-top: 4px solid var(--primary-color); transition: 0.2s; }
+        .task-card { background: var(--container-bg); padding: 12px; border-radius: 8px; margin-bottom: 10px; box-shadow: var(--shadow); border-top: 4px solid var(--primary-color); transition: 0.2s; position: relative; }
         .task-card.mustafa { border-top-color: var(--danger-color); }
         .task-card.iman { border-top-color: var(--warning-color); }
         .task-card.done { opacity: 0.7; }
@@ -58,7 +58,10 @@
         .date-today { color: var(--danger-color); font-weight: 700; }
         .date-late { color: var(--danger-color); font-weight: 700; text-decoration: underline; }
 
-        .badges { display: flex; gap: 8px; font-size: 11px; color: var(--text-color); opacity: 0.7; }
+        .badges { display: flex; gap: 8px; font-size: 11px; color: var(--text-color); opacity: 0.7; align-items: center; }
+        .unread-indicator { background: var(--danger-color); color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
+
         .card-details { display: none; margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px; }
         .task-card.expanded .card-details { display: block; }
         
@@ -67,7 +70,7 @@
 
         .action-menu { position: relative; margin-top: 10px; text-align: left; }
         .menu-btn { background: transparent; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; cursor: pointer; color: var(--text-color); font-family: 'Cairo'; font-size: 12px; }
-        .dropdown-menu { position: absolute; right: 0; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: var(--shadow); z-index: 10; display: none; min-width: 150px; }
+        .dropdown-menu { position: absolute; right: 0; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: var(--shadow); z-index: 10; display: none; min-width: 170px; }
         .dropdown-menu button { display: block; width: 100%; background: transparent; border: none; padding: 8px 12px; text-align: right; cursor: pointer; font-family: 'Cairo'; font-size: 12px; color: var(--text-color); }
         .dropdown-menu button:hover { background: var(--bg-color); }
 
@@ -117,6 +120,7 @@
         <option value="نشء">نشء</option>
         <option value="HUB realestate">HUB realestate</option>
         <option value="FLUX">FLUX</option>
+        <option value="مار ايك">مار ايك</option>
     </select>
 </div>
 
@@ -188,6 +192,7 @@
                     <option value="نشء">نشء</option>
                     <option value="HUB realestate">HUB realestate</option>
                     <option value="FLUX">FLUX</option>
+                    <option value="مار ايك">مار ايك</option>
                 </select>
             </div>
             <div class="form-group">
@@ -223,6 +228,7 @@
                 <option value="نشء">نشء</option>
                 <option value="HUB realestate">HUB realestate</option>
                 <option value="FLUX">FLUX</option>
+                <option value="مار ايك">مار ايك</option>
             </select>
         </div>
         <div class="form-group">
@@ -270,7 +276,8 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbymQGGO4pLd_8qgWLGJZZNifsBF-JLPxC6-_kFjyvpuepqkwBSKcrG5ajXUVbvuv3M/exec"; 
+    // رابط الـ API الجديد الخاص بك
+    const API_URL = "https://script.google.com/macros/s/AKfycbwuRxbIUymO9xJ3j9G4Lym8TAzRP-vrd6ViD2tlVem8OxuejD_UPL1o5dATBEGH3WQ/exec"; 
     
     let tasks = [];
     let currentFilter = 'all';
@@ -357,6 +364,7 @@
             const dateInfo = getDeadlineInfo(t.deadline);
             const linksCount = t.links ? t.links.length : 0;
             const notesCount = t.notes ? t.notes.length : 0;
+            const isRead = t.notesRead === true || t.notesRead === 'true';
 
             let linksHtml = (t.links && t.links.length > 0) ? t.links.map(l => `<a href="${l}" target="_blank">🔗 ${l.substring(0, 30)}...</a>`).join('') : '<span style="font-size:12px; opacity:0.5">لا توجد روابط</span>';
             let notesHtml = (t.notes && t.notes.length > 0) ? t.notes.map(n => `<div class="note-list">💬 ${n}</div>`).join('') : '<span style="font-size:12px; opacity:0.5">لا توجد ملاحظات</span>';
@@ -376,6 +384,7 @@
                 <div class="badges">
                     ${linksCount > 0 ? `📎 (${linksCount})` : ''}
                     ${notesCount > 0 ? `💬 (${notesCount})` : ''}
+                    ${!isRead ? `<span class="unread-indicator">تحديث جديد</span>` : ''}
                 </div>
                 <div class="card-details">
                     <div class="link-list">${linksHtml}</div>
@@ -383,6 +392,7 @@
                     <div class="action-menu">
                         <button class="menu-btn" onclick="toggleMenu(event, this)">⚙️ إجراءات</button>
                         <div class="dropdown-menu" style="display:none;">
+                            ${!isRead ? `<button onclick="event.stopPropagation(); markAsRead('${t.id}')" style="color:var(--success-color); font-weight:bold;">✅ تم الاطلاع على التحديثات</button>` : ''}
                             <button onclick="event.stopPropagation(); openDeliverModal('${t.id}')">📝 تسليم/ملاحظات</button>
                             <button onclick="event.stopPropagation(); requestPin(() => openEditModal('${t.id}'))">⚙️ تعديل البيانات</button>
                             <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'قيد التنفيذ')">▶️ قيد التنفيذ</button>
@@ -411,6 +421,16 @@
         e.stopPropagation();
         const menu = btn.nextElementSibling;
         menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // دالة تحديد المهمة كمقروءة
+    function markAsRead(id) {
+        const task = tasks.find(t => t.id === id);
+        if(task) {
+            task.notesRead = true;
+            sendToSheet({ action: 'markRead', id: id });
+            renderTasks();
+        }
     }
 
     function checkIfLate(deadline, status) {
@@ -448,7 +468,6 @@
         document.getElementById('addPinGroup').style.display = 'none';
     });
 
-    // دوال تعديل البيانات
     function openEditModal(id) {
         editingId = id;
         const task = tasks.find(t => t.id === id);
@@ -506,6 +525,7 @@
         if(task) {
             task.links = Array.from(document.querySelectorAll('.link-input')).map(i => i.value).filter(v => v);
             task.notes = Array.from(document.querySelectorAll('.note-input')).map(i => i.value).filter(v => v);
+            task.action = 'deliver'; // إخبار الخادم أن هذا تسليم عمل (لإرسال الإيميل وجعلها غير مقروءة)
             sendToSheet(task);
             closeModal('deliverModal');
         }
