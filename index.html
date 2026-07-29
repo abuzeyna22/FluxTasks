@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة المهام (مزامنة حية)</title>
+    <title>نظام إدارة المهام الاحترافي</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -17,496 +17,477 @@
             --header-color: #e2e8f0; --border-color: #2d3748; --primary-color: #4299e1;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
-        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 20px; transition: 0.4s; }
-        .container { max-width: 1200px; margin: auto; background: var(--container-bg); padding: 30px; border-radius: 15px; box-shadow: var(--shadow); }
-        .header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px; }
-        h2 { color: var(--header-color); margin: 0; }
-        .sync-status { font-size: 12px; color: var(--success-color); text-align: left; margin-bottom: 15px; }
-        .mode-btn { background: transparent; color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-family: 'Cairo'; font-weight: 600; }
+        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; transition: 0.4s; }
         
-        .search-bar { margin-bottom: 20px; }
-        .search-bar input { width: 100%; padding: 12px 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; background: var(--bg-color); color: var(--text-color); font-family: 'Cairo'; box-sizing: border-box; }
+        .navbar { background: var(--container-bg); box-shadow: var(--shadow); padding: 15px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .nav-btn { padding: 8px 12px; border-radius: 8px; font-weight: 600; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); cursor: pointer; font-size: 14px; font-family: 'Cairo'; }
 
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; background: var(--bg-color); padding: 20px; border-radius: 12px; align-items: flex-end; }
-        .form-group { display: flex; flex-direction: column; }
-        label { font-weight: 600; margin-bottom: 5px; font-size: 14px; }
-        input, select { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; background: var(--container-bg); color: var(--text-color); font-family: 'Cairo'; }
-        .add-btn { background-color: var(--primary-color); color: white; padding: 11px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-family: 'Cairo'; font-weight: 700; }
-        .add-btn:hover { opacity: 0.9; }
-        
-        .tasks-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        @media (max-width: 900px) { .tasks-grid { grid-template-columns: 1fr 1fr; } .form-grid { grid-template-columns: 1fr; } }
-        @media (max-width: 600px) { .tasks-grid { grid-template-columns: 1fr; } }
-        
-        .column { background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 65vh; /* ارتفاع ثابت للأعمدة */ }
-        .column h3 { margin-top: 0; font-size: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .toolbar { padding: 15px 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .search-input { flex-grow: 1; min-width: 200px; padding: 10px 15px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--container-bg); color: var(--text-color); font-family: 'Cairo'; box-sizing: border-box; }
+        .filter-btn { padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); cursor: pointer; font-size: 13px; font-weight: 600; font-family: 'Cairo'; }
+        .filter-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .client-filter { padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--container-bg); color: var(--text-color); font-family: 'Cairo'; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+        .board-container { padding: 0 20px 80px 20px; overflow-x: auto; }
+        .tasks-grid { display: flex; gap: 15px; min-width: max-content; }
+        .column { width: 300px; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 75vh; box-sizing: border-box; }
+        .column-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 10px; }
+        .column-title { font-size: 16px; font-weight: 700; margin: 0; }
         .count-badge { background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 10px; font-size: 12px; }
-        
-        .column-content { overflow-y: auto; flex-grow: 1; padding-left: 5px; /* مساحة لشريط التمرير */ }
-        .column-content::-webkit-scrollbar { width: 6px; }
-        .column-content::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+        .column-content { overflow-y: auto; flex-grow: 1; padding-left: 5px; }
+        .column-content.collapsed { display: none; }
+        .empty-state { font-size: 13px; color: var(--text-color); opacity: 0.5; text-align: center; padding: 20px 0; }
 
-        .task-card { background: var(--container-bg); padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: var(--shadow); border-top: 4px solid var(--primary-color); position: relative; }
+        .task-card { background: var(--container-bg); padding: 12px; border-radius: 8px; margin-bottom: 10px; box-shadow: var(--shadow); border-top: 4px solid var(--primary-color); transition: 0.2s; }
         .task-card.mustafa { border-top-color: var(--danger-color); }
         .task-card.iman { border-top-color: var(--warning-color); }
-        .task-card.done { opacity: 0.7; border-top-color: var(--success-color); }
-        .task-card.late { border-top-color: #e53e3e; background: rgba(229, 62, 62, 0.05); }
-        
-        .task-title { font-weight: 700; margin-bottom: 8px; font-size: 15px; }
-        .task-meta { font-size: 12px; color: var(--text-color); opacity: 0.8; margin-bottom: 5px; display: flex; justify-content: space-between; }
-        .assignee-tag { padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px; }
+        .task-card.done { opacity: 0.7; }
+        .late-glow { border-top-color: var(--danger-color); animation: glow 1.5s infinite alternate; }
+        @keyframes glow { from { box-shadow: 0 0 5px -1px rgba(229, 62, 62, 0.5); } to { box-shadow: 0 0 15px 2px rgba(229, 62, 62, 0.8); } }
+
+        .card-header { display: flex; justify-content: space-between; align-items: start; cursor: pointer; }
+        .task-title { font-weight: 700; font-size: 14px; margin-bottom: 5px; }
+        .task-meta { font-size: 11px; color: var(--text-color); opacity: 0.8; display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+        .tag { padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 10px; }
         .tag-mustafa { background: rgba(229, 62, 62, 0.2); color: #e53e3e; }
         .tag-iman { background: rgba(214, 158, 46, 0.2); color: #d69e2e; }
-        .creator-tag { background: rgba(49, 130, 206, 0.2); color: #3182ce; padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px; }
-        .task-notes { background: rgba(128, 90, 213, 0.1); color: var(--purple-color); padding: 8px; border-radius: 6px; margin-top: 5px; font-size: 12px; text-align: right; }
+        .tag-creator { background: rgba(49, 130, 206, 0.2); color: #3182ce; }
         
-        .task-actions { margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
-        .action-btn { padding: 4px 8px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; font-family: 'Cairo'; background: transparent; border: 1px solid var(--border-color); color: var(--text-color); }
-        .action-btn:hover { background: var(--border-color); }
-        .btn-deliver { color: var(--success-color); border-color: var(--success-color); }
-        .btn-deliver:hover { background: var(--success-color); color: white; }
-        .btn-revision { color: var(--purple-color); border-color: var(--purple-color); }
-        .btn-revision:hover { background: var(--purple-color); color: white; }
-        .btn-complete { color: var(--success-color); border-color: var(--success-color); }
-        .btn-complete:hover { background: var(--success-color); color: white; }
-        .btn-progress { color: var(--primary-color); border-color: var(--primary-color); }
-        .btn-progress:hover { background: var(--primary-color); color: white; }
-        .btn-edit { color: var(--text-color); border-color: var(--border-color); }
-        .btn-edit:hover { background: var(--text-color); color: var(--container-bg); }
-        .del-btn:hover { background: var(--danger-color); color: white; border-color: var(--danger-color); }
+        .date-far { color: var(--success-color); font-weight: 600; }
+        .date-near { color: var(--warning-color); font-weight: 600; }
+        .date-today { color: var(--danger-color); font-weight: 700; }
+        .date-late { color: var(--danger-color); font-weight: 700; text-decoration: underline; }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-        .modal-content { background: var(--container-bg); padding: 30px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: var(--shadow); text-align: center; }
-        .modal-content h3 { margin-top: 0; color: var(--primary-color); margin-bottom: 15px; }
-        .modal-content p { margin-bottom: 20px; color: var(--text-color); }
-        .modal-actions { display: flex; gap: 10px; }
-        .modal-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-family: 'Cairo'; font-weight: 700; cursor: pointer; font-size: 15px; }
-        .btn-confirm-danger { background-color: var(--danger-color); color: white; }
-        .btn-confirm-primary { background-color: var(--primary-color); color: white; }
-        .btn-cancel { background-color: var(--border-color); color: var(--text-color); }
-        .pin-input { text-align: center; font-size: 24px; letter-spacing: 5px; margin-bottom: 15px; }
-        .pin-error { color: var(--danger-color); font-size: 13px; margin-top: 10px; display: none; }
+        .badges { display: flex; gap: 8px; font-size: 11px; color: var(--text-color); opacity: 0.7; }
+        .card-details { display: none; margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px; }
+        .task-card.expanded .card-details { display: block; }
+        
+        .link-list a { display: block; color: var(--primary-color); text-decoration: none; font-size: 12px; margin-bottom: 4px; font-weight: 600; word-break: break-all; }
+        .note-list { font-size: 12px; color: var(--purple-color); background: rgba(128, 90, 213, 0.1); padding: 6px; border-radius: 4px; margin-bottom: 4px; }
+
+        .action-menu { position: relative; margin-top: 10px; text-align: left; }
+        .menu-btn { background: transparent; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; cursor: pointer; color: var(--text-color); font-family: 'Cairo'; font-size: 12px; }
+        .dropdown-menu { position: absolute; right: 0; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: var(--shadow); z-index: 10; display: none; min-width: 150px; }
+        .dropdown-menu button { display: block; width: 100%; background: transparent; border: none; padding: 8px 12px; text-align: right; cursor: pointer; font-family: 'Cairo'; font-size: 12px; color: var(--text-color); }
+        .dropdown-menu button:hover { background: var(--bg-color); }
+
+        .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background-color: var(--primary-color); border-radius: 50%; box-shadow: 0 6px 20px rgba(49, 130, 206, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; font-size: 32px; z-index: 90; }
+        
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: var(--container-bg); padding: 25px; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: var(--shadow); max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
+        .modal-content h3 { margin-top: 0; color: var(--primary-color); margin-bottom: 15px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { font-weight: 600; margin-bottom: 5px; display: block; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; background: var(--bg-color); color: var(--text-color); font-family: 'Cairo'; box-sizing: border-box; }
+        .modal-btn { padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 15px; width: 100%; margin-top: 10px; font-family: 'Cairo'; }
+        .btn-save { background: var(--primary-color); color: white; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .btn-cancel { background: var(--border-color); color: var(--text-color); }
+        .pin-input { text-align: center; font-size: 20px; letter-spacing: 5px; }
+        .dynamic-field { display: flex; gap: 5px; margin-bottom: 5px; }
+        .add-field-btn { background: transparent; color: var(--success-color); border: 1px dashed var(--success-color); padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 10px; font-family: 'Cairo'; font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .column { width: 85vw; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header-flex">
-        <h2>لوحة إدارة فريق العمل (مزامنة حية)</h2>
-        <button class="mode-btn" onclick="toggleDarkMode()">🌙 وضع ليلي</button>
-    </div>
-    <div class="sync-status" id="syncStatus">جاري المزامنة...</div>
+<div class="navbar">
+    <h2 style="margin:0; font-size: 20px; color: var(--header-color);">📋 نظام إدارة المهام</h2>
+    <button class="nav-btn" onclick="toggleDarkMode()">🌙 وضع ليلي</button>
+</div>
 
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="🔍 ابحث باسم المهمة، العميل، أو المسؤول...">
-    </div>
+<div class="toolbar">
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 ابحث باسم المهمة...">
+    <button class="filter-btn active" onclick="setFilter('all', this)">الكل</button>
+    <button class="filter-btn" onclick="setFilter('مصطفى', this)">مصطفى</button>
+    <button class="filter-btn" onclick="setFilter('إيمان', this)">إيمان</button>
+    <button class="filter-btn" onclick="setFilter('late', this)">المتأخرة</button>
+    <select id="clientFilter" class="client-filter" onchange="setClientFilter(this.value)">
+        <option value="all">كل العملاء</option>
+        <option value="menren">menren</option>
+        <option value="fdrac">fdrac</option>
+        <option value="بيزنس خانة">بيزنس خانة</option>
+        <option value="الزهراء">الزهراء</option>
+        <option value="E4UK">E4UK</option>
+        <option value="ألفا كوبي">ألفا كوبي</option>
+        <option value="ا. منال عزت">ا. منال عزت</option>
+        <option value="نشء">نشء</option>
+        <option value="HUB realestate">HUB realestate</option>
+        <option value="FLUX">FLUX</option>
+        <option value="مار ايك">مار ايك</option>
+    </select>
+</div>
 
-    <form id="taskForm" class="form-grid">
-        <div class="form-group">
-            <label>اسم المهمة</label>
-            <input type="text" id="taskName" placeholder="مثال: مونتاج إعلان العميل" required>
-        </div>
-        <div class="form-group">
-            <label>المسؤول</label>
-            <select id="assignee" required>
-                <option value="مصطفى">مصطفى 🎬</option>
-                <option value="إيمان">إيمان 🎨</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>أضافها</label>
-            <select id="createdBy" required>
-                <option value="محمد">محمد</option>
-                <option value="مصطفى">مصطفى</option>
-                <option value="إيمان">إيمان</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>العميل / القسم</label>
-            <input type="text" id="client" placeholder="اسم العميل">
-        </div>
-        <div class="form-group">
-            <label>موعد التسليم</label>
-            <input type="date" id="deadline">
-        </div>
-        <button type="submit" class="add-btn">+ إضافة</button>
-    </form>
-
+<div class="board-container">
     <div class="tasks-grid">
         <div class="column">
-            <h3>قيد التنفيذ <span class="count-badge" id="count-progress">0</span></h3>
+            <div class="column-header" onclick="toggleColumn('progressColumn')">
+                <h3 class="column-title" style="color:var(--primary-color)">قيد التنفيذ</h3>
+                <span class="count-badge" id="count-progress">0</span>
+            </div>
             <div class="column-content" id="progressColumn"></div>
         </div>
         <div class="column">
-            <h3 style="color:var(--purple-color)">طلبات تعديل <span class="count-badge" id="count-revision">0</span></h3>
+            <div class="column-header" onclick="toggleColumn('revisionColumn')">
+                <h3 class="column-title" style="color:var(--purple-color)">طلبات تعديل</h3>
+                <span class="count-badge" id="count-revision">0</span>
+            </div>
             <div class="column-content" id="revisionColumn"></div>
         </div>
         <div class="column">
-            <h3 style="color:var(--danger-color)">مهام متأخرة <span class="count-badge" id="count-late">0</span></h3>
+            <div class="column-header" onclick="toggleColumn('lateColumn')">
+                <h3 class="column-title" style="color:var(--danger-color)">مهام متأخرة</h3>
+                <span class="count-badge" id="count-late">0</span>
+            </div>
             <div class="column-content" id="lateColumn"></div>
         </div>
         <div class="column">
-            <h3 style="color:var(--success-color)">مكتملة <span class="count-badge" id="count-done">0</span></h3>
+            <div class="column-header" onclick="toggleColumn('doneColumn')">
+                <h3 class="column-title" style="color:var(--success-color)">مكتملة</h3>
+                <span class="count-badge" id="count-done">0</span>
+            </div>
             <div class="column-content" id="doneColumn"></div>
         </div>
+    </div>
+</div>
+
+<button class="fab" onclick="openAddModal()">+</button>
+
+<div class="modal-overlay" id="addModal">
+    <div class="modal-content">
+        <h3>➕ إضافة مهمة جديدة</h3>
+        <form id="addForm">
+            <div class="form-group">
+                <label>اسم المهمة</label>
+                <input type="text" id="addTaskName" required>
+            </div>
+            <div class="form-group">
+                <label>المسؤول</label>
+                <select id="addAssignee">
+                    <option value="إيمان">إيمان 🎨</option>
+                    <option value="مصطفى">مصطفى 🎬</option>
+                    <option value="محمد">محمد 👑</option>
+                </select>
+            </div>
+            <div class="form-group" id="addPinGroup" style="display:none;">
+                <label>رمز التأكيد (PIN)</label>
+                <input type="password" id="addPin" class="pin-input" maxlength="4" placeholder="لإضافة مهمة باسم محمد">
+            </div>
+            <div class="form-group">
+                <label>العميل</label>
+                <select id="addClient">
+                    <option value="menren">menren</option>
+                    <option value="fdrac">fdrac</option>
+                    <option value="بيزنس خانة">بيزنس خانة</option>
+                    <option value="الزهراء">الزهراء</option>
+                    <option value="E4UK">E4UK</option>
+                    <option value="ألفا كوبي">ألفا كوبي</option>
+                    <option value="ا. منال عزت">ا. منال عزت</option>
+                    <option value="نشء">نشء</option>
+                    <option value="HUB realestate">HUB realestate</option>
+                    <option value="FLUX">FLUX</option>
+                    <option value="مار ايك">مار ايك</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>موعد التسليم</label>
+                <input type="date" id="addDeadline">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button type="button" class="modal-btn btn-cancel" onclick="closeModal('addModal')">إلغاء</button>
+                <button type="submit" class="modal-btn btn-save">إضافة المهمة</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <div class="modal-overlay" id="deliverModal">
     <div class="modal-content">
         <h3>🚀 تسليم العمل / ملاحظات</h3>
-        <div class="form-group" style="text-align: right;">
-            <label>رابط المواد (Drive)</label>
-            <input type="url" id="deliverLink" placeholder="https://...">
+        <div class="form-group">
+            <label>الروابط (Drive / URLs)</label>
+            <div id="linksContainer"></div>
+            <button type="button" class="add-field-btn" onclick="addLinkField()">+ إضافة رابط جديد</button>
         </div>
-        <div class="form-group" style="text-align: right;">
+        <div class="form-group">
             <label>ملاحظات / تعليقات</label>
-            <textarea id="deliverNotes" rows="3" style="padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Cairo';" placeholder="اكتب ملاحظاتك أو تعديلات العميل هنا..."></textarea>
+            <div id="notesContainer"></div>
+            <button type="button" class="add-field-btn" onclick="addNoteField()">+ إضافة ملاحظة جديدة</button>
         </div>
-        <div class="modal-actions" style="margin-top: 20px;">
-            <button class="modal-btn btn-cancel" onclick="closeDeliverModal()">إلغاء</button>
-            <button class="modal-btn btn-confirm-primary" onclick="saveDelivery()">حفظ التسليم</button>
+        <div style="display:flex; gap:10px;">
+            <button type="button" class="modal-btn btn-cancel" onclick="closeModal('deliverModal')">إلغاء</button>
+            <button type="button" class="modal-btn btn-save" onclick="saveDelivery()">حفظ التسليم</button>
         </div>
     </div>
 </div>
 
 <div class="modal-overlay" id="pinModal">
-    <div class="modal-content">
+    <div class="modal-content" style="max-width: 350px;">
         <h3>🔐 صلاحية المدير</h3>
         <p>لإجراء هذا التعديل أو الحذف، يرجى إدخال رمز المدير.</p>
         <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••">
-        <div class="pin-error" id="pinError">رمز غير صحيح! حاول مرة أخرى.</div>
-        <div class="modal-actions" style="margin-top: 20px;">
-            <button class="modal-btn btn-cancel" onclick="closePinModal()">إلغاء</button>
-            <button class="modal-btn btn-confirm-primary" onclick="verifyPin()">تأكيد</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="editModal">
-    <div class="modal-content">
-        <h3>⚙️ تعديل بيانات المهمة</h3>
-        <div class="form-group" style="text-align: right;">
-            <label>اسم المهمة</label>
-            <input type="text" id="editTaskName">
-        </div>
-        <div class="form-group" style="text-align: right;">
-            <label>العميل</label>
-            <input type="text" id="editClient">
-        </div>
-        <div class="form-group" style="text-align: right;">
-            <label>موعد التسليم الجديد</label>
-            <input type="date" id="editDeadline">
-        </div>
-        <div class="modal-actions" style="margin-top: 20px;">
-            <button class="modal-btn btn-cancel" onclick="closeEditModal()">إلغاء</button>
-            <button class="modal-btn btn-confirm-primary" onclick="saveEdit()">حفظ التعديلات</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="confirmModal">
-    <div class="modal-content">
-        <h3 id="confirmTitle">تأكيد العملية</h3>
-        <p id="confirmMessage">هل أنت متأكد؟</p>
-        <div class="modal-actions">
-            <button class="modal-btn btn-cancel" onclick="closeConfirm()">تراجع</button>
-            <button class="modal-btn btn-confirm-danger" id="confirmBtn" onclick="executeConfirm()">تأكيد</button>
+        <div id="pinError" style="color:var(--danger-color); font-size:13px; text-align:center; display:none;">رمز غير صحيح</div>
+        <div style="display:flex; gap:10px;">
+            <button type="button" class="modal-btn btn-cancel" onclick="closeModal('pinModal')">إلغاء</button>
+            <button type="button" class="modal-btn btn-save" onclick="verifyPin()">تأكيد</button>
         </div>
     </div>
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxXiRHjK_t0MjEDlfbMGozSXans7SUlIcWe4zCoEcUace3A7V-CF7ycu4E3iJREnec/exec"; 
+    const API_URL = "ضع_رابط_الجوجل_سكريبت_الخاص_بالمهام_هنا"; 
+    
     let tasks = [];
-    let editingId = null;
-    let deliveringId = null; 
-    let confirmCallback = null; 
-    let pendingAction = null; 
-    let activePin = null; 
-    let searchQuery = ''; // متغير البحث
+    let currentFilter = 'all';
+    let currentClientFilter = 'all';
+    let searchQuery = '';
+    let deliveringId = null;
+    let pendingAction = null;
+    let activePin = null;
 
-    const form = document.getElementById('taskForm');
-    const searchInput = document.getElementById('searchInput');
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+    }
+    if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
 
-    // استماع لكتابة البحث
-    searchInput.addEventListener('input', (e) => {
+    function setFilter(filter, btn) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderTasks();
+    }
+
+    function setClientFilter(value) {
+        currentClientFilter = value;
+        renderTasks();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
         searchQuery = e.target.value.toLowerCase();
         renderTasks();
     });
 
-    function toggleDarkMode() {
-        document.body.classList.toggle('dark-mode');
-        const isDark = document.body.classList.contains('dark-mode');
-        localStorage.setItem('darkModeTask', isDark);
-        document.querySelector('.mode-btn').innerText = isDark ? "☀️ وضع نهاري" : "🌙 وضع ليلي";
-    }
-    if(localStorage.getItem('darkModeTask') === 'true') toggleDarkMode();
-
-    function checkIfLate(deadline, status) {
-        if(!deadline || status === 'مكتملة') return false;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        return new Date(deadline) < today;
+    function toggleColumn(colId) {
+        document.getElementById(colId).classList.toggle('collapsed');
     }
 
     async function fetchTasks() {
-        document.getElementById('syncStatus').innerText = "جاري تحديث البيانات...";
-        document.getElementById('syncStatus').style.color = "#3182ce";
         try {
-            const response = await fetch(`${API_URL}?t=${Date.now()}`);
-            tasks = await response.json();
+            const res = await fetch(`${API_URL}?t=${Date.now()}`);
+            tasks = await res.json();
             renderTasks();
-            document.getElementById('syncStatus').innerText = "آخر مزامنة: " + new Date().toLocaleTimeString('ar-EG');
-            document.getElementById('syncStatus').style.color = "#38a169";
-        } catch (error) {
-            document.getElementById('syncStatus').innerText = "خطأ في الاتصال بالخادم";
-            document.getElementById('syncStatus').style.color = "#e53e3e";
-        }
+        } catch (e) { console.error("Fetch Error", e); }
+    }
+    async function sendToSheet(data) {
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(data) });
+        setTimeout(fetchTasks, 1000);
     }
 
-    async function sendToSheet(data) {
-        await fetch(API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(data)
-        });
-        setTimeout(fetchTasks, 1000); 
+    function getDeadlineInfo(deadline) {
+        if(!deadline) return { text: 'بدون موعد', class: '' };
+        const today = new Date(); today.setHours(0,0,0,0);
+        const d = new Date(deadline); d.setHours(0,0,0,0);
+        const diff = Math.round((d - today) / (1000 * 60 * 60 * 24));
+        
+        if (diff < 0) return { text: `متأخر (${d.toLocaleDateString('ar-EG')})`, class: 'date-late' };
+        if (diff === 0) return { text: 'اليوم!', class: 'date-today' };
+        if (diff === 1) return { text: 'غداً', class: 'date-near' };
+        return { text: d.toLocaleDateString('ar-EG'), class: 'date-far' };
     }
 
     function renderTasks() {
-        document.getElementById('progressColumn').innerHTML = '';
-        document.getElementById('revisionColumn').innerHTML = '';
-        document.getElementById('lateColumn').innerHTML = '';
-        document.getElementById('doneColumn').innerHTML = '';
-
+        ['progressColumn', 'revisionColumn', 'lateColumn', 'doneColumn'].forEach(id => document.getElementById(id).innerHTML = '');
         let counts = { progress: 0, revision: 0, late: 0, done: 0 };
 
-        // فلترة المهام بناءً على البحث
-        const filteredTasks = tasks.filter(task => {
-            if (!searchQuery) return true; // إذا لم يكن هناك بحث، أظهر كل شيء
-            return (
-                task.taskName.toLowerCase().includes(searchQuery) ||
-                (task.client && task.client.toLowerCase().includes(searchQuery)) ||
-                task.assignee.toLowerCase().includes(searchQuery) ||
-                (task.createdBy && task.createdBy.toLowerCase().includes(searchQuery))
-            );
+        const filtered = tasks.filter(t => {
+            if (searchQuery && !t.taskName.toLowerCase().includes(searchQuery) && !(t.client || '').toLowerCase().includes(searchQuery)) return false;
+            if (currentFilter === 'late') return checkIfLate(t.deadline, t.status);
+            if (currentFilter !== 'all' && t.assignee !== currentFilter) return false;
+            if (currentClientFilter !== 'all' && t.client !== currentClientFilter) return false;
+            return true;
         });
 
-        filteredTasks.forEach((task) => {
-            const isLate = checkIfLate(task.deadline, task.status);
-            let displayStatus = task.status;
-            if(isLate && task.status !== 'مكتملة' && task.status !== 'تعديل مطلوب') {
-                displayStatus = 'متأخرة'; 
-            }
+        filtered.forEach(t => {
+            const isLate = checkIfLate(t.deadline, t.status);
+            let displayStatus = t.status;
+            if(isLate && t.status !== 'مكتملة' && t.status !== 'تعديل مطلوب') displayStatus = 'متأخرة'; 
 
             const card = document.createElement('div');
-            const assigneeClass = task.assignee === 'مصطفى' ? 'mustafa' : 'iman';
-            card.className = `task-card ${assigneeClass} ${displayStatus === 'مكتملة' ? 'done' : ''} ${displayStatus === 'متأخرة' ? 'late' : ''}`;
-            
-            const formattedDate = task.deadline ? new Date(task.deadline).toLocaleDateString('ar-EG') : 'بدون موعد';
-            
-            let buttons = `<button class="action-btn btn-deliver" onclick="openDeliverModal('${task.id}')">📝 تسليم/ملاحظات</button>`;
-            buttons += `<button class="action-btn btn-edit" onclick="requestPin(() => openEditModal('${task.id}'))">⚙️ تعديل</button>`;
-            
-            if (displayStatus === 'مكتملة') {
-                buttons += `<button class="action-btn btn-revision" onclick="changeStatus('${task.id}', 'تعديل مطلوب')">إعادة للتعديل 🔄</button>`;
-            } else {
-                if(displayStatus !== 'قيد التنفيذ' && displayStatus !== 'متأخرة') {
-                    buttons += `<button class="action-btn btn-progress" onclick="changeStatus('${task.id}', 'قيد التنفيذ')">استئناف ▶️</button>`;
-                }
-                if(displayStatus !== 'تعديل مطلوب') {
-                    buttons += `<button class="action-btn btn-revision" onclick="changeStatus('${task.id}', 'تعديل مطلوب')">طلب تعديل ✍️</button>`;
-                }
-                buttons += `<button class="action-btn btn-complete" onclick="changeStatus('${task.id}', 'مكتملة')">إنهاء ✅</button>`;
-            }
-            buttons += `<button class="action-btn del-btn" onclick="requestPin(() => deleteTask('${task.id}'))">🗑️</button>`;
+            const assigneeClass = t.assignee === 'مصطفى' ? 'mustafa' : 'iman';
+            card.className = `task-card ${assigneeClass} ${displayStatus === 'مكتملة' ? 'done' : ''} ${displayStatus === 'متأخرة' ? 'late-glow' : ''}`;
+            card.onclick = (e) => { if(!e.target.closest('button') && !e.target.closest('a')) card.classList.toggle('expanded'); };
+
+            const dateInfo = getDeadlineInfo(t.deadline);
+            const linksCount = t.links ? t.links.length : 0;
+            const notesCount = t.notes ? t.notes.length : 0;
+
+            let linksHtml = (t.links && t.links.length > 0) ? t.links.map(l => `<a href="${l}" target="_blank">🔗 ${l.substring(0, 30)}...</a>`).join('') : '<span style="font-size:12px; opacity:0.5">لا توجد روابط</span>';
+            let notesHtml = (t.notes && t.notes.length > 0) ? t.notes.map(n => `<div class="note-list">💬 ${n}</div>`).join('') : '<span style="font-size:12px; opacity:0.5">لا توجد ملاحظات</span>';
 
             card.innerHTML = `
-                <div class="task-title">${task.taskName}</div>
-                <div class="task-meta">
-                    <span class="assignee-tag ${assigneeClass === 'mustafa' ? 'tag-mustafa' : 'tag-iman'}">المسؤول: ${task.assignee}</span>
-                    <span class="creator-tag">أضافها: ${task.createdBy || '-'}</span>
+                <div class="card-header">
+                    <div>
+                        <div class="task-title">${t.taskName}</div>
+                        <div class="task-meta">
+                            <span class="tag ${assigneeClass === 'mustafa' ? 'tag-mustafa' : 'tag-iman'}">${t.assignee}</span>
+                            <span class="tag tag-creator">${t.createdBy || '-'}</span>
+                            <span>👤 ${t.client || '-'}</span>
+                            <span class="${dateInfo.class}">📅 ${dateInfo.text}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="task-meta">
-                    <span>👤 ${task.client || 'عميل غير محدد'}</span>
-                    <span>📅 التسليم: ${formattedDate}</span>
+                <div class="badges">
+                    ${linksCount > 0 ? `📎 (${linksCount})` : ''}
+                    ${notesCount > 0 ? `💬 (${notesCount})` : ''}
                 </div>
-                ${task.link ? `<div class="task-meta"><a href="${task.link}" target="_blank" style="color:var(--primary-color); text-decoration:none; font-weight:bold;">🔗 فتح رابط المواد</a></div>` : ''}
-                ${task.notes ? `<div class="task-notes">📝 ${task.notes}</div>` : ''}
-                <div class="task-actions">${buttons}</div>
+                <div class="card-details">
+                    <div class="link-list">${linksHtml}</div>
+                    <div class="note-list-container">${notesHtml}</div>
+                    <div class="action-menu">
+                        <button class="menu-btn" onclick="toggleMenu(event, this)">⚙️ إجراءات</button>
+                        <div class="dropdown-menu" style="display:none;">
+                            <button onclick="event.stopPropagation(); openDeliverModal('${t.id}')">📝 تسليم/ملاحظات</button>
+                            <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'قيد التنفيذ')">▶️ قيد التنفيذ</button>
+                            <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'تعديل مطلوب')">✍️ طلب تعديل</button>
+                            <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'مكتملة')">✅ إنهاء</button>
+                            <button onclick="event.stopPropagation(); requestPin(() => deleteTask('${t.id}'))" style="color:var(--danger-color)">🗑️ حذف</button>
+                        </div>
+                    </div>
+                </div>
             `;
 
-            if(displayStatus === 'مكتملة') {
-                document.getElementById('doneColumn').appendChild(card);
-                counts.done++;
-            } else if(displayStatus === 'تعديل مطلوب') {
-                document.getElementById('revisionColumn').appendChild(card);
-                counts.revision++;
-            } else if(displayStatus === 'متأخرة') {
-                document.getElementById('lateColumn').appendChild(card);
-                counts.late++;
-            } else {
-                document.getElementById('progressColumn').appendChild(card);
-                counts.progress++;
-            }
+            if(displayStatus === 'مكتملة') { document.getElementById('doneColumn').appendChild(card); counts.done++; }
+            else if(displayStatus === 'تعديل مطلوب') { document.getElementById('revisionColumn').appendChild(card); counts.revision++; }
+            else if(displayStatus === 'متأخرة') { document.getElementById('lateColumn').appendChild(card); counts.late++; }
+            else { document.getElementById('progressColumn').appendChild(card); counts.progress++; }
         });
 
-        // تحديث العداد ليعكس العدد الإجمالي (وليس المفلتر فقط)
-        document.getElementById('count-progress').innerText = counts.progress;
-        document.getElementById('count-revision').innerText = counts.revision;
-        document.getElementById('count-late').innerText = counts.late;
-        document.getElementById('count-done').innerText = counts.done;
+        ['progress', 'revision', 'late', 'done'].forEach(s => {
+            let colId = s + 'Column';
+            if(counts[s] === 0) document.getElementById(colId).innerHTML = `<div class="empty-state">لا توجد مهام هنا</div>`;
+            document.getElementById(`count-${s}`).innerText = counts[s];
+        });
     }
 
-    form.addEventListener('submit', function(e) {
+    function toggleMenu(e, btn) {
+        e.stopPropagation();
+        const menu = btn.nextElementSibling;
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function checkIfLate(deadline, status) {
+        if(!deadline || status === 'مكتملة') return false;
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        return new Date(deadline) < today;
+    }
+
+    document.getElementById('addAssignee').addEventListener('change', function() {
+        document.getElementById('addPinGroup').style.display = this.value === 'محمد' ? 'block' : 'none';
+    });
+
+    document.getElementById('addForm').addEventListener('submit', function(e) {
         e.preventDefault();
+        let assignee = document.getElementById('addAssignee').value;
+        let pin = document.getElementById('addPin').value;
+        
+        if(assignee === 'محمد' && pin !== '1234') {
+            alert("رمز التأكيد غير صحيح! لا يمكن إضافة مهمة باسم محمد. يرجى تغيير المستخدم أو إدخال الرمز الصحيح.");
+            return;
+        }
+
         const newTask = {
-            taskName: document.getElementById('taskName').value,
-            assignee: document.getElementById('assignee').value,
-            createdBy: document.getElementById('createdBy').value,
-            client: document.getElementById('client').value,
-            deadline: document.getElementById('deadline').value,
-            link: "", 
-            notes: "", 
+            taskName: document.getElementById('addTaskName').value,
+            assignee: assignee,
+            createdBy: assignee,
+            client: document.getElementById('addClient').value,
+            deadline: document.getElementById('addDeadline').value,
+            links: [], notes: [],
             status: 'قيد التنفيذ'
         };
         sendToSheet(newTask);
-        form.reset();
+        closeModal('addModal');
+        this.reset();
+        document.getElementById('addPinGroup').style.display = 'none';
     });
-
-    function changeStatus(id, newStatus) {
-        const task = tasks.find(t => t.id === id);
-        if(task) {
-            task.status = newStatus;
-            sendToSheet(task);
-        }
-    }
-
-    function requestPin(actionCallback) {
-        pendingAction = actionCallback;
-        document.getElementById('pinInput').value = '';
-        document.getElementById('pinError').style.display = 'none';
-        document.getElementById('pinModal').style.display = 'flex';
-    }
-
-    async function verifyPin() {
-        const enteredPin = document.getElementById('pinInput').value;
-        document.getElementById('pinError').style.display = 'none';
-        document.getElementById('pinError').innerText = "جاري التحقق...";
-        document.getElementById('pinError').style.color = "#3182ce";
-        document.getElementById('pinError').style.display = 'block';
-
-        try {
-            const response = await fetch(`${API_URL}?action=verifyPin&pin=${enteredPin}&t=${Date.now()}`);
-            const result = await response.json();
-            if (result.verified) {
-                activePin = enteredPin;
-                const actionToRun = pendingAction; 
-                closePinModal(); 
-                if (actionToRun) actionToRun(); 
-            } else {
-                document.getElementById('pinError').innerText = "رمز غير صحيح! حاول مرة أخرى.";
-                document.getElementById('pinError').style.color = "#e53e3e";
-                document.getElementById('pinError').style.display = 'block';
-            }
-        } catch (err) {
-            document.getElementById('pinError').innerText = "خطأ في الاتصال بالخادم.";
-            document.getElementById('pinError').style.color = "#e53e3e";
-            document.getElementById('pinError').style.display = 'block';
-        }
-    }
-
-    function closePinModal() {
-        document.getElementById('pinModal').style.display = 'none';
-        pendingAction = null;
-    }
 
     function openDeliverModal(id) {
         deliveringId = id;
         const task = tasks.find(t => t.id === id);
-        if(task) {
-            document.getElementById('deliverLink').value = task.link || '';
-            document.getElementById('deliverNotes').value = task.notes || '';
-            document.getElementById('deliverModal').style.display = 'flex';
-        }
+        document.getElementById('linksContainer').innerHTML = '';
+        document.getElementById('notesContainer').innerHTML = '';
+        
+        if(task.links && task.links.length > 0) task.links.forEach(l => addLinkField(l));
+        else addLinkField();
+        
+        if(task.notes && task.notes.length > 0) task.notes.forEach(n => addNoteField(n));
+        else addNoteField();
+
+        document.getElementById('deliverModal').style.display = 'flex';
     }
-    function closeDeliverModal() {
-        document.getElementById('deliverModal').style.display = 'none';
-        deliveringId = null;
+    function addLinkField(val = '') {
+        const div = document.createElement('div');
+        div.className = 'dynamic-field';
+        div.innerHTML = `<input type="url" class="link-input" value="${val}" placeholder="https://..."><button type="button" onclick="this.parentElement.remove()" style="background:var(--danger-color); color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">X</button>`;
+        document.getElementById('linksContainer').appendChild(div);
+    }
+    function addNoteField(val = '') {
+        const div = document.createElement('div');
+        div.className = 'dynamic-field';
+        div.innerHTML = `<input type="text" class="note-input" value="${val}" placeholder="اكتب ملاحظة..."><button type="button" onclick="this.parentElement.remove()" style="background:var(--danger-color); color:white; border:none; border-radius:4px; padding:5px 10px; cursor:pointer;">X</button>`;
+        document.getElementById('notesContainer').appendChild(div);
     }
     function saveDelivery() {
-        if(deliveringId) {
-            const task = tasks.find(t => t.id === deliveringId);
-            if(task) {
-                task.link = document.getElementById('deliverLink').value;
-                task.notes = document.getElementById('deliverNotes').value;
-                sendToSheet(task);
-                closeDeliverModal();
-            }
+        const task = tasks.find(t => t.id === deliveringId);
+        if(task) {
+            task.links = Array.from(document.querySelectorAll('.link-input')).map(i => i.value).filter(v => v);
+            task.notes = Array.from(document.querySelectorAll('.note-input')).map(i => i.value).filter(v => v);
+            sendToSheet(task);
+            closeModal('deliverModal');
         }
     }
 
-    function openEditModal(id) {
-        editingId = id;
-        const task = tasks.find(t => t.id === id);
-        if(task) {
-            document.getElementById('editTaskName').value = task.taskName;
-            document.getElementById('editClient').value = task.client || '';
-            document.getElementById('editDeadline').value = task.deadline || '';
-            document.getElementById('editModal').style.display = 'flex';
-        }
+    function requestPin(action) {
+        pendingAction = action;
+        document.getElementById('pinInput').value = '';
+        document.getElementById('pinError').style.display = 'none';
+        document.getElementById('pinModal').style.display = 'flex';
     }
-    function closeEditModal() {
-        document.getElementById('editModal').style.display = 'none';
-        editingId = null;
-        activePin = null; 
-    }
-    function saveEdit() {
-        if(editingId) {
-            const task = tasks.find(t => t.id === editingId);
-            if(task) {
-                showConfirm("هل أنت متأكد من حفظ التعديلات؟", () => {
-                    task.taskName = document.getElementById('editTaskName').value;
-                    task.client = document.getElementById('editClient').value;
-                    task.deadline = document.getElementById('editDeadline').value;
-                    if(task.status === 'متأخرة') task.status = 'قيد التنفيذ';
-                    task.action = 'updateData'; 
-                    task.pin = activePin; 
-                    sendToSheet(task);
-                    closeEditModal();
-                }, "نعم، احفظ", "btn-confirm-primary");
+    async function verifyPin() {
+        const pin = document.getElementById('pinInput').value.trim();
+        try {
+            const res = await fetch(`${API_URL}?action=verifyPin&pin=${pin}&t=${Date.now()}`);
+            const result = await res.json();
+            if(result.verified) {
+                activePin = pin;
+                closeModal('pinModal');
+                if(pendingAction) pendingAction();
+            } else {
+                document.getElementById('pinError').style.display = 'block';
             }
-        }
+        } catch(e) { alert("خطأ في الاتصال"); }
     }
 
     function deleteTask(id) {
-        showConfirm("⚠️ تحذير: سيتم حذف هذه المهمة نهائياً. هل أنت متأكد؟", () => {
-            sendToSheet({ action: 'delete', id: id, pin: activePin }); 
-            activePin = null; 
-        }, "نعم، احذف", "btn-confirm-danger");
+        if(confirm("هل أنت متأكد من الحذف النهائي؟")) {
+            sendToSheet({ action: 'delete', id: id, pin: activePin });
+            activePin = null;
+        }
     }
 
-    function showConfirm(message, callback, btnText = "تأكيد", btnClass = "btn-confirm-danger") {
-        document.getElementById('confirmMessage').innerText = message;
-        const confirmBtn = document.getElementById('confirmBtn');
-        confirmBtn.innerText = btnText;
-        confirmBtn.className = `modal-btn ${btnClass}`;
-        confirmCallback = callback;
-        document.getElementById('confirmModal').style.display = 'flex';
+    function changeStatus(id, status) {
+        const task = tasks.find(t => t.id === id);
+        if(task) { task.status = status; sendToSheet(task); }
     }
-    function closeConfirm() {
-        document.getElementById('confirmModal').style.display = 'none';
-        confirmCallback = null;
-    }
-    function executeConfirm() {
-        if(confirmCallback) confirmCallback();
-        closeConfirm();
-    }
+
+    function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+    function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
 
     fetchTasks();
-    setInterval(fetchTasks, 15000); 
+    setInterval(fetchTasks, 15000);
 </script>
 
 </body>
