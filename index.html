@@ -18,6 +18,12 @@
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
         body { font-family: 'Cairo', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; transition: 0.4s; }
+
+        /* Login Screen */
+        .login-overlay { display: flex; position: fixed; inset: 0; background: var(--bg-color); z-index: 2000; justify-content: center; align-items: center; flex-direction: column; }
+        .login-box { background: var(--container-bg); padding: 30px; border-radius: 12px; box-shadow: var(--shadow); width: 300px; text-align: center; }
+        .login-box h3 { margin-top: 0; color: var(--primary-color); margin-bottom: 15px; }
+        .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: 'Cairo'; text-align: center; }
         
         .navbar { background: var(--container-bg); box-shadow: var(--shadow); padding: 15px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
         .nav-btn { padding: 8px 12px; border-radius: 8px; font-weight: 600; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); cursor: pointer; font-size: 14px; font-family: 'Cairo'; }
@@ -90,12 +96,20 @@
         .dynamic-field { display: flex; gap: 5px; margin-bottom: 5px; }
         .add-field-btn { background: transparent; color: var(--success-color); border: 1px dashed var(--success-color); padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 10px; font-family: 'Cairo'; font-weight: 600; }
 
-        @media (max-width: 768px) {
-            .column { width: 85vw; }
-        }
+        @media (max-width: 768px) { .column { width: 85vw; } }
     </style>
 </head>
 <body>
+
+<!-- Login Screen -->
+<div class="login-overlay" id="loginScreen">
+    <div class="login-box">
+        <h3>🔒 دخول النظام</h3>
+        <input type="password" id="sitePassInput" class="login-input" placeholder="أدخل كلمة مرور النظام">
+        <button class="modal-btn btn-save" onclick="attemptLogin()">دخول</button>
+        <div id="loginError" style="color: var(--danger-color); margin-top: 10px; font-size: 13px; display: none;">كلمة المرور غير صحيحة</div>
+    </div>
+</div>
 
 <div class="navbar">
     <h2 style="margin:0; font-size: 20px; color: var(--header-color);">📋 نظام إدارة المهام</h2>
@@ -172,7 +186,7 @@
                 <select id="addAssignee">
                     <option value="إيمان">إيمان 🎨</option>
                     <option value="مصطفى">مصطفى 🎬</option>
-                    <option value="محمد">محمد 💼</option>
+                    <option value="محمد">محمد 👑</option>
                 </select>
             </div>
             <div class="form-group" id="addPinGroup" style="display:none;">
@@ -207,7 +221,6 @@
     </div>
 </div>
 
-<!-- نافذة تعديل البيانات -->
 <div class="modal-overlay" id="editModal">
     <div class="modal-content">
         <h3>⚙️ تعديل بيانات المهمة</h3>
@@ -276,7 +289,6 @@
 </div>
 
 <script>
-    // رابط الـ API الجديد الخاص بك
     const API_URL = "https://script.google.com/macros/s/AKfycbwuRxbIUymO9xJ3j9G4Lym8TAzRP-vrd6ViD2tlVem8OxuejD_UPL1o5dATBEGH3WQ/exec"; 
     
     let tasks = [];
@@ -287,12 +299,34 @@
     let editingId = null;
     let pendingAction = null;
     let activePin = null;
+    let appPass = sessionStorage.getItem('appPass') || ''; // تخزين كلمة المرور مؤقتاً
 
     function toggleDarkMode() {
         document.body.classList.toggle('dark-mode');
         localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
     }
     if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+
+    // Login Logic
+    async function attemptLogin() {
+        appPass = document.getElementById('sitePassInput').value;
+        document.getElementById('loginError').style.display = 'none';
+        try {
+            // محاولة جلب البيانات بكلمة المرور المدخلة
+            const res = await fetch(`${API_URL}?appPass=${appPass}&t=${Date.now()}`);
+            const data = await res.json();
+            if (data.error) {
+                document.getElementById('loginError').style.display = 'block';
+            } else {
+                sessionStorage.setItem('appPass', appPass); // حفظ كلمة المرور للجلسة الحالية
+                document.getElementById('loginScreen').style.display = 'none';
+                tasks = data;
+                renderTasks();
+            }
+        } catch (e) {
+            document.getElementById('loginError').style.display = 'block';
+        }
+    }
 
     function setFilter(filter, btn) {
         currentFilter = filter;
@@ -316,13 +350,21 @@
     }
 
     async function fetchTasks() {
+        if (!appPass) return; // لا تجلب البيانات إذا لم يتم تسجيل الدخول
         try {
-            const res = await fetch(`${API_URL}?t=${Date.now()}`);
-            tasks = await res.json();
+            const res = await fetch(`${API_URL}?appPass=${appPass}&t=${Date.now()}`);
+            const data = await res.json();
+            if (data.error) {
+                document.getElementById('loginScreen').style.display = 'flex'; // إظهار شاشة الدخول إذا انتهت الجلسة
+                return;
+            }
+            tasks = data;
             renderTasks();
         } catch (e) { console.error("Fetch Error", e); }
     }
     async function sendToSheet(data) {
+        // إرفاق كلمة مرور الموقع مع كل طلب إرسال للحفاظ على الأمان
+        data.appPass = appPass;
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(data) });
         setTimeout(fetchTasks, 1000);
     }
@@ -423,7 +465,6 @@
         menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     }
 
-    // دالة تحديد المهمة كمقروءة
     function markAsRead(id) {
         const task = tasks.find(t => t.id === id);
         if(task) {
@@ -449,7 +490,7 @@
         let pin = document.getElementById('addPin').value;
         
         if(assignee === 'محمد' && pin !== '1234') {
-            alert("رمز التأكيد غير صحيح! لا يمكن إضافة مهمة باسم محمد. يرجى تغيير المستخدم أو إدخال الرمز الصحيح.");
+            alert("رمز التأكيد غير صحيح! لا يمكن إضافة مهمة باسم محمد.");
             return;
         }
 
@@ -525,7 +566,7 @@
         if(task) {
             task.links = Array.from(document.querySelectorAll('.link-input')).map(i => i.value).filter(v => v);
             task.notes = Array.from(document.querySelectorAll('.note-input')).map(i => i.value).filter(v => v);
-            task.action = 'deliver'; // إخبار الخادم أن هذا تسليم عمل (لإرسال الإيميل وجعلها غير مقروءة)
+            task.action = 'deliver';
             sendToSheet(task);
             closeModal('deliverModal');
         }
@@ -540,7 +581,7 @@
     async function verifyPin() {
         const pin = document.getElementById('pinInput').value.trim();
         try {
-            const res = await fetch(`${API_URL}?action=verifyPin&pin=${pin}&t=${Date.now()}`);
+            const res = await fetch(`${API_URL}?appPass=${appPass}&action=verifyPin&pin=${pin}&t=${Date.now()}`);
             const result = await res.json();
             if(result.verified) {
                 activePin = pin;
@@ -567,7 +608,12 @@
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
     function openAddModal() { document.getElementById('addModal').style.display = 'flex'; }
 
-    fetchTasks();
+    // بدء التشغيل
+    if (appPass) {
+        // إذا كان قد سجل الدخول مسبقاً في نفس الجلسة، جلب البيانات مباشرة
+        document.getElementById('loginScreen').style.display = 'none';
+        fetchTasks();
+    }
     setInterval(fetchTasks, 15000);
 </script>
 
