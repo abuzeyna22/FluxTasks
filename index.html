@@ -204,6 +204,41 @@
     </div>
 </div>
 
+<!-- نافذة تعديل البيانات -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+        <h3>⚙️ تعديل بيانات المهمة</h3>
+        <div class="form-group">
+            <label>اسم المهمة</label>
+            <input type="text" id="editTaskName">
+        </div>
+        <div class="form-group">
+            <label>العميل</label>
+            <select id="editClient">
+                <option value="menren">menren</option>
+                <option value="fdrac">fdrac</option>
+                <option value="بيزنس خانة">بيزنس خانة</option>
+                <option value="الزهراء">الزهراء</option>
+                <option value="E4UK">E4UK</option>
+                <option value="ألفا كوبي">ألفا كوبي</option>
+                <option value="ا. منال عزت">ا. منال عزت</option>
+                <option value="نشء">نشء</option>
+                <option value="HUB realestate">HUB realestate</option>
+                <option value="FLUX">FLUX</option>
+                <option value="مار ايك">مار ايك</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>موعد التسليم الجديد</label>
+            <input type="date" id="editDeadline">
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button type="button" class="modal-btn btn-cancel" onclick="closeModal('editModal')">إلغاء</button>
+            <button type="button" class="modal-btn btn-save" onclick="saveEdit()">حفظ التعديلات</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="deliverModal">
     <div class="modal-content">
         <h3>🚀 تسليم العمل / ملاحظات</h3>
@@ -245,6 +280,7 @@
     let currentClientFilter = 'all';
     let searchQuery = '';
     let deliveringId = null;
+    let editingId = null;
     let pendingAction = null;
     let activePin = null;
 
@@ -351,6 +387,7 @@
                         <button class="menu-btn" onclick="toggleMenu(event, this)">⚙️ إجراءات</button>
                         <div class="dropdown-menu" style="display:none;">
                             <button onclick="event.stopPropagation(); openDeliverModal('${t.id}')">📝 تسليم/ملاحظات</button>
+                            <button onclick="event.stopPropagation(); requestPin(() => openEditModal('${t.id}'))">⚙️ تعديل البيانات</button>
                             <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'قيد التنفيذ')">▶️ قيد التنفيذ</button>
                             <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'تعديل مطلوب')">✍️ طلب تعديل</button>
                             <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'مكتملة')">✅ إنهاء</button>
@@ -413,6 +450,33 @@
         this.reset();
         document.getElementById('addPinGroup').style.display = 'none';
     });
+
+    // دوال تعديل البيانات
+    function openEditModal(id) {
+        editingId = id;
+        const task = tasks.find(t => t.id === id);
+        if(task) {
+            document.getElementById('editTaskName').value = task.taskName;
+            document.getElementById('editClient').value = task.client || '';
+            document.getElementById('editDeadline').value = task.deadline || '';
+            document.getElementById('editModal').style.display = 'flex';
+        }
+    }
+    function saveEdit() {
+        if(editingId) {
+            const task = tasks.find(t => t.id === editingId);
+            if(task) {
+                task.taskName = document.getElementById('editTaskName').value;
+                task.client = document.getElementById('editClient').value;
+                task.deadline = document.getElementById('editDeadline').value;
+                if(task.status === 'متأخرة') task.status = 'قيد التنفيذ';
+                task.action = 'updateData';
+                task.pin = activePin;
+                sendToSheet(task);
+                closeModal('editModal');
+            }
+        }
+    }
 
     function openDeliverModal(id) {
         deliveringId = id;
