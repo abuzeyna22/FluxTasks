@@ -35,8 +35,6 @@
 
         .board-container { padding: 0 20px 80px 20px; overflow-x: auto; }
         .tasks-grid { display: flex; gap: 15px; min-width: max-content; }
-        
-        /* تم إضافة flex-shrink: 0 لمنع تداخل الأعمدة */
         .column { width: 300px; flex-shrink: 0; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 75vh; box-sizing: border-box; }
         .column-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 10px; }
         .column-title { font-size: 16px; font-weight: 700; margin: 0; }
@@ -45,7 +43,6 @@
         .column-content.collapsed { display: none; }
         .empty-state { font-size: 13px; color: var(--text-color); opacity: 0.5; text-align: center; padding: 20px 0; }
 
-        /* تم إضافة z-index: 1 للكروت العادية */
         .task-card { background: var(--container-bg); padding: 12px; border-radius: 8px; margin-bottom: 10px; box-shadow: var(--shadow); border-top: 4px solid var(--primary-color); transition: 0.2s; position: relative; z-index: 1; }
         .task-card.mustafa { border-top-color: var(--danger-color); }
         .task-card.iman { border-top-color: var(--warning-color); }
@@ -71,22 +68,16 @@
         @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
 
         .card-details { display: none; margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px; }
-        
-        /* تم إضافة z-index: 10 وظل أعمق للكارت المفتوح */
         .task-card.expanded { z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .task-card.expanded .card-details { display: block; }
         
         .link-list a { display: block; color: var(--primary-color); text-decoration: none; font-size: 12px; margin-bottom: 4px; font-weight: 600; word-break: break-all; }
         .note-list { font-size: 12px; color: var(--purple-color); background: rgba(128, 90, 213, 0.1); padding: 6px; border-radius: 4px; margin-bottom: 4px; }
 
-        /* تم رفع z-index لقائمة الإجراءات لتظهر فوق الكروت */
-        .action-menu { position: relative; margin-top: 10px; text-align: left; z-index: 20; }
-        .menu-btn { background: transparent; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; cursor: pointer; color: var(--text-color); font-family: 'Cairo'; font-size: 12px; }
-        
-        /* تم تعديل top: 100% و z-index: 30 وإضافة ظل قوي للقائمة المنسدلة */
-        .dropdown-menu { position: absolute; right: 0; top: 100%; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); z-index: 30; display: none; min-width: 170px; }
-        .dropdown-menu button { display: block; width: 100%; background: transparent; border: none; padding: 8px 12px; text-align: right; cursor: pointer; font-family: 'Cairo'; font-size: 12px; color: var(--text-color); }
-        .dropdown-menu button:hover { background: var(--bg-color); }
+        /* تصميم أزرار الإجراءات الجديدة (تظهر كقائمة ثابتة بدلاً من منسدلة) */
+        .action-list { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+        .action-btn { background: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 12px; text-align: right; cursor: pointer; font-family: 'Cairo'; font-size: 13px; color: var(--text-color); width: 100%; transition: 0.2s; }
+        .action-btn:hover { background: var(--bg-color); }
 
         .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background-color: var(--primary-color); border-radius: 50%; box-shadow: 0 6px 20px rgba(49, 130, 206, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; font-size: 32px; z-index: 90; }
         
@@ -432,6 +423,7 @@
             let linksHtml = (t.links && t.links.length > 0) ? t.links.map(l => `<a href="${l}" target="_blank">🔗 ${l.substring(0, 30)}...</a>`).join('') : '<span style="font-size:12px; opacity:0.5">لا توجد روابط</span>';
             let notesHtml = (t.notes && t.notes.length > 0) ? t.notes.map(n => `<div class="note-list">💬 ${n}</div>`).join('') : '<span style="font-size:12px; opacity:0.5">لا توجد ملاحظات</span>';
 
+            // أزرار الإجراءات أصبحت قائمة ثابتة تظهر داخل الكارت المتمدد
             card.innerHTML = `
                 <div class="card-header">
                     <div>
@@ -452,17 +444,14 @@
                 <div class="card-details">
                     <div class="link-list">${linksHtml}</div>
                     <div class="note-list-container">${notesHtml}</div>
-                    <div class="action-menu">
-                        <button class="menu-btn" onclick="toggleMenu(event, this)">⚙️ إجراءات</button>
-                        <div class="dropdown-menu" style="display:none;">
-                            ${!isRead ? `<button onclick="event.stopPropagation(); markAsRead('${t.id}')" style="color:var(--success-color); font-weight:bold;">✅ تم الاطلاع على التحديثات</button>` : ''}
-                            <button onclick="event.stopPropagation(); openDeliverModal('${t.id}')">📝 تسليم/ملاحظات</button>
-                            <button onclick="event.stopPropagation(); requestPin(() => openEditModal('${t.id}'))">⚙️ تعديل البيانات</button>
-                            <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'قيد التنفيذ')">▶️ قيد التنفيذ</button>
-                            <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'تعديل مطلوب')">✍️ طلب تعديل</button>
-                            <button onclick="event.stopPropagation(); changeStatus('${t.id}', 'مكتملة')">✅ إنهاء</button>
-                            <button onclick="event.stopPropagation(); requestPin(() => deleteTask('${t.id}'))" style="color:var(--danger-color)">🗑️ حذف</button>
-                        </div>
+                    <div class="action-list">
+                        ${!isRead ? `<button class="action-btn" onclick="event.stopPropagation(); markAsRead('${t.id}')" style="color:var(--success-color); font-weight:bold;">✅ تم الاطلاع على التحديثات</button>` : ''}
+                        <button class="action-btn" onclick="event.stopPropagation(); openDeliverModal('${t.id}')">📝 تسليم/ملاحظات</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); requestPin(() => openEditModal('${t.id}'))">⚙️ تعديل البيانات</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'قيد التنفيذ')">▶️ قيد التنفيذ</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'تعديل مطلوب')">✍️ طلب تعديل</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'مكتملة')">✅ إنهاء</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); requestPin(() => deleteTask('${t.id}'))" style="color:var(--danger-color)">🗑️ حذف</button>
                     </div>
                 </div>
             `;
@@ -478,12 +467,6 @@
             if(counts[s] === 0) document.getElementById(colId).innerHTML = `<div class="empty-state">لا توجد مهام هنا</div>`;
             document.getElementById(`count-${s}`).innerText = counts[s];
         });
-    }
-
-    function toggleMenu(e, btn) {
-        e.stopPropagation();
-        const menu = btn.nextElementSibling;
-        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     }
 
     function markAsRead(id) {
@@ -529,7 +512,6 @@
         btn.innerText = "جاري رفع الصورة... ⏳";
         btn.disabled = true;
 
-        // تحويل الصورة إلى Base64 لأن Imgbb يتطلب ذلك
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onloadend = async () => {
