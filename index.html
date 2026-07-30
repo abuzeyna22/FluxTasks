@@ -35,7 +35,9 @@
 
         .board-container { padding: 0 20px 80px 20px; overflow-x: auto; }
         .tasks-grid { display: flex; gap: 15px; min-width: max-content; }
-        .column { width: 300px; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 75vh; box-sizing: border-box; }
+        
+        /* تم إضافة flex-shrink: 0 لمنع تداخل الأعمدة */
+        .column { width: 300px; flex-shrink: 0; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 75vh; box-sizing: border-box; }
         .column-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 10px; }
         .column-title { font-size: 16px; font-weight: 700; margin: 0; }
         .count-badge { background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 10px; font-size: 12px; }
@@ -43,7 +45,8 @@
         .column-content.collapsed { display: none; }
         .empty-state { font-size: 13px; color: var(--text-color); opacity: 0.5; text-align: center; padding: 20px 0; }
 
-        .task-card { background: var(--container-bg); padding: 12px; border-radius: 8px; margin-bottom: 10px; box-shadow: var(--shadow); border-top: 4px solid var(--primary-color); transition: 0.2s; position: relative; }
+        /* تم إضافة z-index: 1 للكروت العادية */
+        .task-card { background: var(--container-bg); padding: 12px; border-radius: 8px; margin-bottom: 10px; box-shadow: var(--shadow); border-top: 4px solid var(--primary-color); transition: 0.2s; position: relative; z-index: 1; }
         .task-card.mustafa { border-top-color: var(--danger-color); }
         .task-card.iman { border-top-color: var(--warning-color); }
         .task-card.done { opacity: 0.7; }
@@ -68,14 +71,20 @@
         @keyframes pulse { 0% { opacity: 0.8; } 50% { opacity: 1; } 100% { opacity: 0.8; } }
 
         .card-details { display: none; margin-top: 10px; border-top: 1px dashed var(--border-color); padding-top: 10px; }
+        
+        /* تم إضافة z-index: 10 وظل أعمق للكارت المفتوح */
+        .task-card.expanded { z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .task-card.expanded .card-details { display: block; }
         
         .link-list a { display: block; color: var(--primary-color); text-decoration: none; font-size: 12px; margin-bottom: 4px; font-weight: 600; word-break: break-all; }
         .note-list { font-size: 12px; color: var(--purple-color); background: rgba(128, 90, 213, 0.1); padding: 6px; border-radius: 4px; margin-bottom: 4px; }
 
-        .action-menu { position: relative; margin-top: 10px; text-align: left; }
+        /* تم رفع z-index لقائمة الإجراءات لتظهر فوق الكروت */
+        .action-menu { position: relative; margin-top: 10px; text-align: left; z-index: 20; }
         .menu-btn { background: transparent; border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px; cursor: pointer; color: var(--text-color); font-family: 'Cairo'; font-size: 12px; }
-        .dropdown-menu { position: absolute; right: 0; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: var(--shadow); z-index: 10; display: none; min-width: 170px; }
+        
+        /* تم تعديل top: 100% و z-index: 30 وإضافة ظل قوي للقائمة المنسدلة */
+        .dropdown-menu { position: absolute; right: 0; top: 100%; background: var(--container-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2); z-index: 30; display: none; min-width: 170px; }
         .dropdown-menu button { display: block; width: 100%; background: transparent; border: none; padding: 8px 12px; text-align: right; cursor: pointer; font-family: 'Cairo'; font-size: 12px; color: var(--text-color); }
         .dropdown-menu button:hover { background: var(--bg-color); }
 
