@@ -311,7 +311,7 @@
 
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbwuRxbIUymO9xJ3j9G4Lym8TAzRP-vrd6ViD2tlVem8OxuejD_UPL1o5dATBEGH3WQ/exec"; 
-    const IMG_API_KEY = "71307118640265da76172e90445b208b; // مفتاح API الخاص بـ Imgbb
+    const IMG_API_KEY = "71307118640265da76172e90445b208b"; // مفتاح API الخاص بـ Imgbb
     
     let tasks = [];
     let currentFilter = 'all';
@@ -510,7 +510,7 @@
         document.getElementById(containerId).appendChild(div);
     }
 
-        // Image Upload Logic (Imgbb)
+    // Image Upload Logic (Imgbb)
     async function handleImageUpload(input, containerId) {
         if (input.files.length === 0) return;
         const file = input.files[0];
