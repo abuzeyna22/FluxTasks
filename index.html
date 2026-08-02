@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة المهام الاحترافي</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Flux Team - إدارة المهام</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-color: #eef2f6; --container-bg: #ffffff; --text-color: #2d3748;
@@ -25,6 +25,8 @@
         .login-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); color: var(--text-color); box-sizing: border-box; font-family: 'Cairo'; text-align: center; }
         
         .navbar { background: var(--container-bg); box-shadow: var(--shadow); padding: 15px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .brand-name { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; color: var(--header-color); }
+        .logo { height: 35px; width: 35px; border-radius: 8px; object-fit: cover; }
         .nav-btn { padding: 8px 12px; border-radius: 8px; font-weight: 600; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); cursor: pointer; font-size: 14px; font-family: 'Cairo'; }
 
         .toolbar { padding: 15px 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -35,9 +37,9 @@
 
         .board-container { padding: 0 20px 80px 20px; overflow-x: auto; }
         .tasks-grid { display: flex; gap: 15px; min-width: max-content; }
-        .column { width: 300px; flex-shrink: 0; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 75vh; box-sizing: border-box; }
+        .column { width: 280px; flex-shrink: 0; background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; max-height: 75vh; box-sizing: border-box; }
         .column-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 10px; }
-        .column-title { font-size: 16px; font-weight: 700; margin: 0; }
+        .column-title { font-size: 15px; font-weight: 700; margin: 0; }
         .count-badge { background: var(--border-color); color: var(--text-color); padding: 2px 8px; border-radius: 10px; font-size: 12px; }
         .column-content { overflow-y: auto; flex-grow: 1; padding-left: 5px; }
         .column-content.collapsed { display: none; }
@@ -74,10 +76,10 @@
         .link-list a { display: block; color: var(--primary-color); text-decoration: none; font-size: 12px; margin-bottom: 4px; font-weight: 600; word-break: break-all; }
         .note-list { font-size: 12px; color: var(--purple-color); background: rgba(128, 90, 213, 0.1); padding: 6px; border-radius: 4px; margin-bottom: 4px; }
 
-        /* تصميم أزرار الإجراءات الجديدة (تظهر كقائمة ثابتة بدلاً من منسدلة) */
         .action-list { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
         .action-btn { background: transparent; border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 12px; text-align: right; cursor: pointer; font-family: 'Cairo'; font-size: 13px; color: var(--text-color); width: 100%; transition: 0.2s; }
         .action-btn:hover { background: var(--bg-color); }
+        .action-btn.success-btn { background: var(--success-color); color: white; font-weight: bold; border: none; }
 
         .fab { position: fixed; bottom: 30px; left: 30px; width: 60px; height: 60px; background-color: var(--primary-color); border-radius: 50%; box-shadow: 0 6px 20px rgba(49, 130, 206, 0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; border: none; color: white; font-size: 32px; z-index: 90; }
         
@@ -104,7 +106,8 @@
 
 <div class="login-overlay" id="loginScreen">
     <div class="login-box">
-        <h3>🔒 دخول النظام</h3>
+        <!-- يمكنك وضع اللوجو هنا أيضاً في شاشة الدخول -->
+        <h3>🔒 Flux Team</h3>
         <input type="password" id="sitePassInput" class="login-input" placeholder="أدخل كلمة مرور النظام">
         <button class="modal-btn btn-save" onclick="attemptLogin()">دخول</button>
         <div id="loginError" style="color: var(--danger-color); margin-top: 10px; font-size: 13px; display: none;">كلمة المرور غير صحيحة</div>
@@ -112,12 +115,15 @@
 </div>
 
 <div class="navbar">
-    <h2 style="margin:0; font-size: 20px; color: var(--header-color);">📋 نظام إدارة المهام</h2>
+    <div class="brand-name">
+        <img src="https://i.ibb.co/fBjjMPt/e7bb95e1-ec79-49d3-a376-c5816c6320b4.png" class="logo" alt="Logo">
+        Flux Team
+    </div>
     <button class="nav-btn" onclick="toggleDarkMode()">🌙 وضع ليلي</button>
 </div>
 
 <div class="toolbar">
-    <input type="text" id="searchInput" class="search-input" placeholder="🔍 ابحث باسم المهمة...">
+    <input type="text" id="searchInput" class="search-input" placeholder="🔍 ابحث باسم المهمة أو العميل...">
     <button class="filter-btn active" onclick="setFilter('all', this)">الكل</button>
     <button class="filter-btn" onclick="setFilter('مصطفى', this)">مصطفى</button>
     <button class="filter-btn" onclick="setFilter('إيمان', this)">إيمان</button>
@@ -160,6 +166,13 @@
                 <span class="count-badge" id="count-late">0</span>
             </div>
             <div class="column-content" id="lateColumn"></div>
+        </div>
+        <div class="column">
+            <div class="column-header" onclick="toggleColumn('reviewColumn')">
+                <h3 class="column-title" style="color:var(--warning-color)">👁️ مراجعة المدير</h3>
+                <span class="count-badge" id="count-review">0</span>
+            </div>
+            <div class="column-content" id="reviewColumn"></div>
         </div>
         <div class="column">
             <div class="column-header" onclick="toggleColumn('doneColumn')">
@@ -215,7 +228,6 @@
                 <input type="date" id="addDeadline">
             </div>
             
-            <!-- روابط وملاحظات في الإضافة -->
             <div class="form-group">
                 <label>الروابط (Drive / URLs)</label>
                 <div id="addLinksContainer"></div>
@@ -299,7 +311,7 @@
 <div class="modal-overlay" id="pinModal">
     <div class="modal-content" style="max-width: 350px;">
         <h3>🔐 صلاحية المدير</h3>
-        <p>لإجراء هذا التعديل أو الحذف، يرجى إدخال رمز المدير.</p>
+        <p>لإجراء هذا التعديل أو الاعتماد، يرجى إدخال رمز المدير.</p>
         <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••">
         <div id="pinError" style="color:var(--danger-color); font-size:13px; text-align:center; display:none;">رمز غير صحيح</div>
         <div style="display:flex; gap:10px;">
@@ -394,8 +406,8 @@
     }
 
     function renderTasks() {
-        ['progressColumn', 'revisionColumn', 'lateColumn', 'doneColumn'].forEach(id => document.getElementById(id).innerHTML = '');
-        let counts = { progress: 0, revision: 0, late: 0, done: 0 };
+        ['progressColumn', 'revisionColumn', 'lateColumn', 'reviewColumn', 'doneColumn'].forEach(id => document.getElementById(id).innerHTML = '');
+        let counts = { progress: 0, revision: 0, late: 0, review: 0, done: 0 };
 
         const filtered = tasks.filter(t => {
             if (searchQuery && !t.taskName.toLowerCase().includes(searchQuery) && !(t.client || '').toLowerCase().includes(searchQuery)) return false;
@@ -408,7 +420,8 @@
         filtered.forEach(t => {
             const isLate = checkIfLate(t.deadline, t.status);
             let displayStatus = t.status;
-            if(isLate && t.status !== 'مكتملة' && t.status !== 'تعديل مطلوب') displayStatus = 'متأخرة'; 
+            // المهام المرفوعة للمراجعة لا تعتبر متأخرة حتى لو فات موعدها
+            if(isLate && t.status !== 'مكتملة' && t.status !== 'تعديل مطلوب' && t.status !== 'مراجعة المدير') displayStatus = 'متأخرة'; 
 
             const card = document.createElement('div');
             const assigneeClass = t.assignee === 'مصطفى' ? 'mustafa' : 'iman';
@@ -423,7 +436,32 @@
             let linksHtml = (t.links && t.links.length > 0) ? t.links.map(l => `<a href="${l}" target="_blank">🔗 ${l.substring(0, 30)}...</a>`).join('') : '<span style="font-size:12px; opacity:0.5">لا توجد روابط</span>';
             let notesHtml = (t.notes && t.notes.length > 0) ? t.notes.map(n => `<div class="note-list">💬 ${n}</div>`).join('') : '<span style="font-size:12px; opacity:0.5">لا توجد ملاحظات</span>';
 
-            // أزرار الإجراءات أصبحت قائمة ثابتة تظهر داخل الكارت المتمدد
+            // تحديد الأزرار بناءً على حالة المهمة
+            let actionsHtml = `
+                <div class="action-list">
+                    ${!isRead ? `<button class="action-btn" onclick="event.stopPropagation(); markAsRead('${t.id}')" style="color:var(--success-color); font-weight:bold;">✅ تم الاطلاع على التحديثات</button>` : ''}
+                    <button class="action-btn" onclick="event.stopPropagation(); openDeliverModal('${t.id}')">📝 تسليم/ملاحظات</button>
+                    <button class="action-btn" onclick="event.stopPropagation(); requestPin(() => openEditModal('${t.id}'))">⚙️ تعديل البيانات</button>
+            `;
+
+            if (displayStatus === 'مكتملة') {
+                actionsHtml += `<button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'مراجعة المدير')">↩️ إعادة للمراجعة</button>`;
+            } else if (displayStatus === 'مراجعة المدير') {
+                // زر الاعتماد يتطلب PIN
+                actionsHtml += `<button class="action-btn success-btn" onclick="event.stopPropagation(); requestPin(() => changeStatus('${t.id}', 'مكتملة'))">✅ اعتماد وإتمام</button>`;
+                actionsHtml += `<button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'قيد التنفيذ')">▶️ إرجاع للتنفيذ</button>`;
+            } else {
+                // للفريق: رفع للمراجعة بدلاً من إنهاء
+                actionsHtml += `<button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'مراجعة المدير')">👁️ رفع للمراجعة</button>`;
+                if(displayStatus !== 'تعديل مطلوب') {
+                    actionsHtml += `<button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'تعديل مطلوب')">✍️ طلب تعديل</button>`;
+                }
+                if(displayStatus !== 'قيد التنفيذ' && displayStatus !== 'متأخرة') {
+                    actionsHtml += `<button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'قيد التنفيذ')">▶️ استئناف</button>`;
+                }
+            }
+            actionsHtml += `<button class="action-btn" onclick="event.stopPropagation(); requestPin(() => deleteTask('${t.id}'))" style="color:var(--danger-color)">🗑️ حذف</button></div>`;
+
             card.innerHTML = `
                 <div class="card-header">
                     <div>
@@ -444,25 +482,18 @@
                 <div class="card-details">
                     <div class="link-list">${linksHtml}</div>
                     <div class="note-list-container">${notesHtml}</div>
-                    <div class="action-list">
-                        ${!isRead ? `<button class="action-btn" onclick="event.stopPropagation(); markAsRead('${t.id}')" style="color:var(--success-color); font-weight:bold;">✅ تم الاطلاع على التحديثات</button>` : ''}
-                        <button class="action-btn" onclick="event.stopPropagation(); openDeliverModal('${t.id}')">📝 تسليم/ملاحظات</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); requestPin(() => openEditModal('${t.id}'))">⚙️ تعديل البيانات</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'قيد التنفيذ')">▶️ قيد التنفيذ</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'تعديل مطلوب')">✍️ طلب تعديل</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); changeStatus('${t.id}', 'مكتملة')">✅ إنهاء</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); requestPin(() => deleteTask('${t.id}'))" style="color:var(--danger-color)">🗑️ حذف</button>
-                    </div>
+                    ${actionsHtml}
                 </div>
             `;
 
             if(displayStatus === 'مكتملة') { document.getElementById('doneColumn').appendChild(card); counts.done++; }
             else if(displayStatus === 'تعديل مطلوب') { document.getElementById('revisionColumn').appendChild(card); counts.revision++; }
             else if(displayStatus === 'متأخرة') { document.getElementById('lateColumn').appendChild(card); counts.late++; }
+            else if(displayStatus === 'مراجعة المدير') { document.getElementById('reviewColumn').appendChild(card); counts.review++; }
             else { document.getElementById('progressColumn').appendChild(card); counts.progress++; }
         });
 
-        ['progress', 'revision', 'late', 'done'].forEach(s => {
+        ['progress', 'revision', 'late', 'review', 'done'].forEach(s => {
             let colId = s + 'Column';
             if(counts[s] === 0) document.getElementById(colId).innerHTML = `<div class="empty-state">لا توجد مهام هنا</div>`;
             document.getElementById(`count-${s}`).innerText = counts[s];
@@ -479,7 +510,7 @@
     }
 
     function checkIfLate(deadline, status) {
-        if(!deadline || status === 'مكتملة') return false;
+        if(!deadline || status === 'مكتملة' || status === 'مراجعة المدير') return false;
         const today = new Date(); today.setHours(0, 0, 0, 0);
         return new Date(deadline) < today;
     }
@@ -488,7 +519,6 @@
         document.getElementById('addPinGroup').style.display = this.value === 'محمد' ? 'block' : 'none';
     });
 
-    // Dynamic Fields Logic
     function addLinkField(containerId, val = '') {
         const div = document.createElement('div');
         div.className = 'dynamic-field';
@@ -502,7 +532,6 @@
         document.getElementById(containerId).appendChild(div);
     }
 
-    // Image Upload Logic (Imgbb)
     async function handleImageUpload(input, containerId) {
         if (input.files.length === 0) return;
         const file = input.files[0];
